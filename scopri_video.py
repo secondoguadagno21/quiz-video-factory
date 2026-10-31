@@ -13,7 +13,7 @@ QUOTA (10.000 punti al giorno, gratuiti):
   videos.list ........... 1 punto   (fino a 50 video per chiamata)
   channels.list ......... 1 punto
 """
-import json, os, re, sys, urllib.request, urllib.parse, argparse, datetime
+import json, os, re, sys, urllib.request, urllib.error, urllib.parse, argparse, datetime
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BASE = "https://www.googleapis.com/youtube/v3"
@@ -36,6 +36,18 @@ def get(endpoint, **params):
     spesa["punti"] += COSTO.get(endpoint, 1)
     spesa["chiamate"].append(endpoint)
     return d
+
+def carica_env():
+    """Sul PC la chiave sta nel file .env (mai su GitHub); nel cloud nelle
+    impostazioni dell'ambiente. Una variabile gia' impostata vince sempre."""
+    p = os.path.join(ROOT, ".env")
+    if not os.path.exists(p): return
+    for riga in open(p, encoding="utf-8-sig"):
+        riga = riga.strip()
+        if not riga or riga.startswith("#") or "=" not in riga: continue
+        k, v = riga.split("=", 1)
+        k = k.strip().removeprefix("export ").strip()
+        os.environ.setdefault(k, v.strip().strip('"').strip("'"))
 
 def durata(iso):
     m = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", iso or "")
@@ -115,9 +127,11 @@ if __name__ == "__main__":
     ap.add_argument("--salva", action="store_true", help="aggiunge a riferimenti.json")
     a = ap.parse_args()
 
+    carica_env()
     KEY = os.environ.get("YT_API_KEY", "").strip()
     if not KEY:
-        sys.exit("Manca YT_API_KEY.  export YT_API_KEY=...")
+        sys.exit("Manca YT_API_KEY.\n  Cloud: impostazioni dell'ambiente.\n"
+                 "  PC: copia .env.esempio in .env e incolla la chiave.")
     if not a.cerca and not a.canale:
         sys.exit("Serve almeno --cerca \"...\" oppure --canale UCxxxx")
 

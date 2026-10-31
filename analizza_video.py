@@ -8,7 +8,7 @@ percio' passiamo dall'API.
   python3 analizza_video.py                      # usa la lista in riferimenti.json
   python3 analizza_video.py --id ABC123 DEF456
 """
-import json, os, re, sys, urllib.request, urllib.parse, argparse
+import json, os, re, sys, urllib.request, urllib.error, urllib.parse, argparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 API  = "https://www.googleapis.com/youtube/v3/videos"
@@ -19,9 +19,34 @@ def api(ids, key):
         q = urllib.parse.urlencode({
             "part": "snippet,contentDetails,statistics",
             "id": ",".join(ids[i:i+50]), "key": key})
-        with urllib.request.urlopen(f"{API}?{q}", timeout=30) as r:
-            out += json.load(r).get("items", [])
+        try:
+            with urllib.request.urlopen(f"{API}?{q}", timeout=30) as r:
+                out += json.load(r).get("items", [])
+        except urllib.error.HTTPError as e:
+            err = json.load(e).get("error", {})
+            motivi = {x.get("reason") for x in err.get("errors", [])}
+            if "quotaExceeded" in motivi:
+                sys.exit("QUOTA ESAURITA per oggi. Si azzera a mezzanotte ora del Pacifico.")
+            if e.code == 400 or "keyInvalid" in motivi:
+                sys.exit("Chiave non valida: controlla di averla copiata intera, "
+                         "senza spazi ne' virgolette.")
+            if e.code == 403:
+                sys.exit("Chiave rifiutata: verifica che sia abilitata per "
+                         "YouTube Data API v3.\n  Dettaglio: " + err.get("message", ""))
+            sys.exit(f"API YouTube: {err.get('message', e)}")
     return out
+
+def carica_env():
+    """Sul PC la chiave sta nel file .env (mai su GitHub); nel cloud nelle
+    impostazioni dell'ambiente. Una variabile gia' impostata vince sempre."""
+    p = os.path.join(ROOT, ".env")
+    if not os.path.exists(p): return
+    for riga in open(p, encoding="utf-8-sig"):
+        riga = riga.strip()
+        if not riga or riga.startswith("#") or "=" not in riga: continue
+        k, v = riga.split("=", 1)
+        k = k.strip().removeprefix("export ").strip()
+        os.environ.setdefault(k, v.strip().strip('"').strip("'"))
 
 def durata(iso):
     m = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", iso or "")
@@ -79,11 +104,13 @@ if __name__ == "__main__":
     ap.add_argument("--out", default=os.path.join(ROOT, "riferimenti-analisi.json"))
     a = ap.parse_args()
 
+    carica_env()
     key = os.environ.get("YT_API_KEY", "").strip()
     if not key:
         sys.exit("Manca YT_API_KEY.\n"
                  "  Chiave da console.cloud.google.com -> API e servizi -> Credenziali\n"
-                 "  (abilita 'YouTube Data API v3'), poi:  export YT_API_KEY=...")
+                 "  (abilita 'YouTube Data API v3').\n"
+                 "  Cloud: impostazioni dell'ambiente.  PC: copia .env.esempio in .env.")
 
     ids = a.id
     if not ids:

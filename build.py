@@ -9,9 +9,11 @@ import json, os, subprocess, sys, textwrap, shutil, argparse, time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 TMP  = os.path.join(ROOT, ".tmp")
+REL  = ".tmp"          # i filtri ffmpeg vedono solo percorsi relativi: su Windows
+                       # "C:/..." ha i due punti, che per ffmpeg separano le opzioni
 
 def sh(args):
-    r = subprocess.run(args, capture_output=True, text=True)
+    r = subprocess.run(args, capture_output=True, text=True, cwd=ROOT)
     if r.returncode != 0:
         print("FFMPEG ERRORE:\n" + r.stderr[-2500:], file=sys.stderr)
         sys.exit(1)
@@ -22,7 +24,7 @@ def txtfile(name, content):
     p = os.path.join(TMP, name)
     with open(p, "w", encoding="utf-8") as f:
         f.write(content)
-    return p.replace("\\", "/")
+    return f"{REL}/{name}"
 
 def wrap(s, width):
     return textwrap.wrap(s, width=width) or [""]
@@ -39,9 +41,9 @@ class Factory:
         self.crf    = brand["video"]["crf"]
         self.preset = brand["video"]["preset"]
         self.c = brand["colori"]
-        self.f = {k: os.path.join(ROOT, p) for k, p in brand["font"].items()}
+        self.f = {k: p.replace("\\", "/") for k, p in brand["font"].items()}
         for k, p in self.f.items():
-            if not os.path.exists(p):
+            if not os.path.exists(os.path.join(ROOT, p)):
                 sys.exit(f"Font mancante per '{k}': {p}")
         self.G = self._geometria()
 
@@ -113,14 +115,20 @@ class Factory:
 
     def make_bg(self):
         """Sfondo generato una volta: il filtro gradients si anima e si vedrebbe lo scatto."""
-        self.bgpng = os.path.join(TMP, "bg.png")
-        top = "#" + self.c["sfondo_top"][2:]; bot = "#" + self.c["sfondo_bottom"][2:]
-        subprocess.run(["convert", "-size", f"{self.W}x{self.H}",
-                        f"gradient:{bot}-{top}", self.bgpng], check=True)
+        self.bgpng = f"{REL}/bg.png"
+        # sfumatura lineare calcolata riga per riga: chiaro in alto, scuro in basso.
+        # (il filtro "gradients" sui formati verticali arriva al colore finale a meta')
+        a = int(self.c["sfondo_bottom"], 16); b = int(self.c["sfondo_top"], 16)
+        ch = lambda v, sh: (v >> sh) & 255
+        expr = lambda sh: f"{ch(a,sh)}+({ch(b,sh)}-{ch(a,sh)})*Y/(H-1)"
+        sh(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
+            f"color=c=black:s={self.W}x{self.H}:d=1,format=rgb24,"
+            f"geq=r='{expr(16)}':g='{expr(8)}':b='{expr(0)}'",
+            "-frames:v", "1", self.bgpng])
         return self.bgpng
 
     def render(self, name, dur, vfilters, afilter=None):
-        out = os.path.join(TMP, name)
+        out = f"{REL}/{name}"
         chain = ",".join(vfilters) if vfilters else "null"
         a_in = afilter or f"anullsrc=r=44100:cl=stereo:d={dur}"
         sh(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
@@ -203,6 +211,7 @@ def main():
 
     brand = json.load(open(os.path.join(ROOT, "brand.json"), encoding="utf-8"))
     data  = json.load(open(a.quiz, encoding="utf-8"))
+    if a.music: a.music = os.path.abspath(a.music)
     dom   = data["domande"][:a.max] if a.max else data["domande"]
 
     shutil.rmtree(TMP, ignore_errors=True); os.makedirs(TMP, exist_ok=True)
@@ -225,20 +234,20 @@ def main():
 
     lst = os.path.join(TMP, "lista.txt")
     with open(lst, "w") as f:
-        for s in segs: f.write(f"file '{s}'\n")
-    out = a.out or os.path.join(ROOT, "out",
+        for s in segs: f.write(f"file '{os.path.basename(s)}'\n")   # relativi alla lista
+    out = os.path.abspath(a.out) if a.out else os.path.join(ROOT, "out",
             f"{os.path.splitext(os.path.basename(a.quiz))[0]}-{a.formato}.mp4")
 
     print("  montaggio")
-    muto = os.path.join(TMP, "montato.mp4")
+    muto = f"{REL}/montato.mp4"
     sh(["ffmpeg","-hide_banner","-loglevel","error","-y","-f","concat","-safe","0",
-        "-i",lst,"-c","copy",muto])
+        "-i",f"{REL}/lista.txt","-c","copy",muto])
 
     if a.no_music:
-        shutil.move(muto, out)
+        shutil.move(os.path.join(ROOT, muto), out)
     else:
         dur = float(subprocess.run(["ffprobe","-v","error","-show_entries","format=duration",
-                                    "-of","csv=p=0",muto],capture_output=True,text=True).stdout.strip())
+                                    "-of","csv=p=0",muto],capture_output=True,text=True,cwd=ROOT).stdout.strip())
         bed = a.music
         if not bed:
             cart = os.path.join(ROOT,"assets","audio")
@@ -247,7 +256,7 @@ def main():
             if tuoi:
                 bed = os.path.join(cart, tuoi[0]); print(f"  musica: {tuoi[0]} (tua)")
             else:
-                bed = os.path.join(TMP,"bed_auto.wav"); print(f"  musica: generata ({dur:.0f}s)")
+                bed = f"{REL}/bed_auto.wav"; print(f"  musica: generata ({dur:.0f}s)")
                 sh([sys.executable, os.path.join(ROOT,"make_music.py"),
                     "--dur", f"{min(dur,180):.2f}", "--out", bed])
         vol = a.music_vol if a.music_vol is not None else brand.get("audio",{}).get("volume_musica",0.40)

@@ -3,6 +3,60 @@
 Fabbrica di video quiz verticali (1080x1920) che gira **nel cloud**, comandabile dal telefono.
 Nessun software da installare. Nessun Mac acceso.
 
+## Dove si lavora: tre modi, un solo repo
+
+Il lavoro vive **qui, su GitHub**, non in un ambiente e non su un computer.
+Gli ambienti cloud (Default, SHOP BN) sono solo la configurazione della macchina
+che lo esegue: rete consentita, chiavi, programmi. Il codice lo prendono da qui.
+
+| Modo | Da dove comandi | Dove gira | Vede le cartelle del PC | PC acceso |
+|---|---|---|---|---|
+| **Cloud** | telefono o PC | ambiente **Default** | no | no |
+| **PC** | il PC | il tuo computer | sì | sì |
+| **Remote Control** | telefono | il tuo computer | sì | sì |
+
+Per i quiz si usa l'ambiente **Default**: lì c'è `YT_API_KEY`.
+
+### Installazione sul PC (una volta sola)
+
+**Windows** (PowerShell):
+```
+winget install Gyan.FFmpeg
+winget install Python.Python.3.12
+winget install Git.Git
+```
+Chiudi e riapri PowerShell, poi:
+```
+pip install numpy
+git clone https://github.com/secondoguadagno21/quiz-video-factory.git
+cd quiz-video-factory
+copy .env.esempio .env
+notepad .env
+python build.py quiz\divertenti-italia.json
+```
+
+**Mac** (Terminale):
+```
+brew install ffmpeg python git
+pip3 install numpy
+git clone https://github.com/secondoguadagno21/quiz-video-factory.git
+cd quiz-video-factory
+cp .env.esempio .env
+open -e .env
+python3 build.py quiz/divertenti-italia.json
+```
+
+Nel file `.env` incolla la chiave YouTube al posto di `incolla-qui-la-chiave`.
+Il file `.env` resta sul tuo PC e non finisce mai su GitHub.
+
+### La regola per non perdere niente
+
+Cloud e PC lavorano sullo stesso repo. Per non pestarsi i piedi:
+- **prima di cominciare**: `git pull`
+- **quando hai finito**: `git add -A`, `git commit -m "cosa ho fatto"`, `git push`
+
+Le sessioni cloud fanno da sole il pull all'avvio; il push lo fanno quando glielo chiedi.
+
 ## Come si comanda dal telefono
 
 1. Apri l'app Claude → Code → nuova sessione su questo repo.
