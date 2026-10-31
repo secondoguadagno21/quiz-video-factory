@@ -222,7 +222,7 @@ automatica dei video da emulare.
 
 ## Da fare, una volta sbloccato
 
-- [ ] Analizzare i 13 video di riferimento (`python3 analizza_video.py`)
+- [x] Analizzare i 13 video di riferimento → `ANALISI-RIFERIMENTI.md`
 - [ ] Leggere la libreria brand e i materiali dalle cartelle locali
 - [ ] Agganciare la pipeline YouTube già esistente (`pubblica.py`, canale
       Benessere Network Etna Wellness, categoria 24 Intrattenimento)
