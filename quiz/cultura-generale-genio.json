@@ -1,0 +1,511 @@
+{
+ "titolo": "SE NE FAI 30 CORRETTE SEI UN GENIO!",
+ "sottotitolo": "45 DOMANDE - 3 LIVELLI",
+ "capitoli": [
+  [
+   0,
+   "Livello 1 - Facile"
+  ],
+  [
+   15,
+   "Livello 2 - Medio"
+  ],
+  [
+   30,
+   "Livello 3 - Difficile"
+  ]
+ ],
+ "youtube": {
+  "titolo": "SE NE FAI 30 CORRETTE SEI UN GENIO! 🧠🇮🇹 | Quiz di Cultura Generale",
+  "descrizione": "Quanto è forte la tua cultura generale? 🧠🔥\n\n45 domande in 3 livelli: si parte facile e si arriva a quelle che fanno sudare. Hai 10 secondi per ogni risposta.\n\nTieni il conto e scrivi il tuo punteggio nei commenti! 💬\nSfida i tuoi amici e condividi il quiz 🚀",
+  "tag": [
+   "quiz cultura generale",
+   "quiz italiano",
+   "quiz di cultura generale",
+   "quiz",
+   "test cultura generale",
+   "domande di cultura generale",
+   "quiz trivia",
+   "quiz difficile"
+  ],
+  "miniatura": {
+   "riga1": "SE NE FAI 30",
+   "riga2": "SEI UN GENIO!",
+   "badge": "45 DOMANDE"
+  }
+ },
+ "domande": [
+  {
+   "q": "Qual è la capitale del Portogallo?",
+   "opzioni": [
+    "Lisbona",
+    "Madrid",
+    "Siviglia",
+    "Porto"
+   ],
+   "giusta": 0
+  },
+  {
+   "q": "Quanti giorni ha un anno bisestile?",
+   "opzioni": [
+    "367",
+    "366",
+    "365",
+    "364"
+   ],
+   "giusta": 1,
+   "spiegazione": "366 - FEBBRAIO HA 29 GIORNI"
+  },
+  {
+   "q": "Qual è il pianeta più vicino al Sole?",
+   "opzioni": [
+    "Venere",
+    "Mercurio",
+    "Marte",
+    "Terra"
+   ],
+   "giusta": 1
+  },
+  {
+   "q": "Chi ha dipinto la Gioconda?",
+   "opzioni": [
+    "Caravaggio",
+    "Raffaello",
+    "Leonardo",
+    "Michelangelo"
+   ],
+   "giusta": 2,
+   "spiegazione": "LEONARDO DA VINCI"
+  },
+  {
+   "q": "Quante zampe ha un ragno?",
+   "opzioni": [
+    "8",
+    "6",
+    "12",
+    "10"
+   ],
+   "giusta": 0
+  },
+  {
+   "q": "Qual è l'oceano più grande del mondo?",
+   "opzioni": [
+    "Atlantico",
+    "Indiano",
+    "Artico",
+    "Pacifico"
+   ],
+   "giusta": 3
+  },
+  {
+   "q": "In quale città si trova il Colosseo?",
+   "opzioni": [
+    "Milano",
+    "Roma",
+    "Napoli",
+    "Verona"
+   ],
+   "giusta": 1
+  },
+  {
+   "q": "Qual è la formula chimica dell'acqua?",
+   "opzioni": [
+    "H2O",
+    "CO2",
+    "O2",
+    "NaCl"
+   ],
+   "giusta": 0
+  },
+  {
+   "q": "Quanti minuti ci sono in un'ora?",
+   "opzioni": [
+    "30",
+    "100",
+    "60",
+    "90"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Chi ha scritto la Divina Commedia?",
+   "opzioni": [
+    "Petrarca",
+    "Dante",
+    "Boccaccio",
+    "Manzoni"
+   ],
+   "giusta": 1,
+   "spiegazione": "DANTE ALIGHIERI"
+  },
+  {
+   "q": "Qual è il mammifero più grande del mondo?",
+   "opzioni": [
+    "Elefante africano",
+    "Orca",
+    "Balenottera azzurra",
+    "Giraffa"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Quale animale è il simbolo del WWF?",
+   "opzioni": [
+    "Tigre",
+    "Koala",
+    "Leone",
+    "Panda"
+   ],
+   "giusta": 3,
+   "spiegazione": "IL PANDA GIGANTE"
+  },
+  {
+   "q": "In quale paese si trovano le piramidi di Giza?",
+   "opzioni": [
+    "Marocco",
+    "Messico",
+    "Egitto",
+    "Grecia"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Quante sono le note musicali?",
+   "opzioni": [
+    "8",
+    "7",
+    "5",
+    "12"
+   ],
+   "giusta": 1,
+   "spiegazione": "DO RE MI FA SOL LA SI"
+  },
+  {
+   "q": "Quale lingua si parla in Brasile?",
+   "opzioni": [
+    "Francese",
+    "Portoghese",
+    "Inglese",
+    "Spagnolo"
+   ],
+   "giusta": 1
+  },
+  {
+   "q": "In che anno è caduto il Muro di Berlino?",
+   "opzioni": [
+    "1985",
+    "1991",
+    "1989",
+    "1993"
+   ],
+   "giusta": 2,
+   "spiegazione": "9 NOVEMBRE 1989"
+  },
+  {
+   "q": "Qual è la capitale dell'Australia?",
+   "opzioni": [
+    "Perth",
+    "Melbourne",
+    "Canberra",
+    "Sydney"
+   ],
+   "giusta": 2,
+   "spiegazione": "CANBERRA, NON SYDNEY!"
+  },
+  {
+   "q": "Quale elemento ha il simbolo Fe?",
+   "opzioni": [
+    "Francio",
+    "Fluoro",
+    "Fosforo",
+    "Ferro"
+   ],
+   "giusta": 3,
+   "spiegazione": "FE = FERRUM IN LATINO"
+  },
+  {
+   "q": "Quante ossa ha il corpo di un adulto?",
+   "opzioni": [
+    "226",
+    "186",
+    "206",
+    "306"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Chi ha scoperto la penicillina?",
+   "opzioni": [
+    "Fleming",
+    "Marie Curie",
+    "Koch",
+    "Pasteur"
+   ],
+   "giusta": 0,
+   "spiegazione": "ALEXANDER FLEMING, 1928"
+  },
+  {
+   "q": "Qual è la montagna più alta del mondo?",
+   "opzioni": [
+    "Everest",
+    "Kilimangiaro",
+    "K2",
+    "Monte Bianco"
+   ],
+   "giusta": 0,
+   "spiegazione": "EVEREST, 8.849 METRI"
+  },
+  {
+   "q": "Quale pianeta è chiamato Pianeta Rosso?",
+   "opzioni": [
+    "Marte",
+    "Saturno",
+    "Giove",
+    "Venere"
+   ],
+   "giusta": 0
+  },
+  {
+   "q": "Chi ha composto Le quattro stagioni?",
+   "opzioni": [
+    "Rossini",
+    "Vivaldi",
+    "Verdi",
+    "Puccini"
+   ],
+   "giusta": 1,
+   "spiegazione": "ANTONIO VIVALDI"
+  },
+  {
+   "q": "In che anno l'uomo è sbarcato sulla Luna?",
+   "opzioni": [
+    "1972",
+    "1965",
+    "1959",
+    "1969"
+   ],
+   "giusta": 3,
+   "spiegazione": "20 LUGLIO 1969"
+  },
+  {
+   "q": "Qual è la capitale del Canada?",
+   "opzioni": [
+    "Vancouver",
+    "Montréal",
+    "Toronto",
+    "Ottawa"
+   ],
+   "giusta": 3
+  },
+  {
+   "q": "Quanti cuori ha un polpo?",
+   "opzioni": [
+    "3",
+    "8",
+    "2",
+    "1"
+   ],
+   "giusta": 0,
+   "spiegazione": "3 CUORI E SANGUE BLU"
+  },
+  {
+   "q": "Qual è il gas più abbondante nell'aria?",
+   "opzioni": [
+    "Ossigeno",
+    "Anidride carbonica",
+    "Argon",
+    "Azoto"
+   ],
+   "giusta": 3,
+   "spiegazione": "AZOTO, CIRCA IL 78%"
+  },
+  {
+   "q": "Chi ha scritto I Promessi Sposi?",
+   "opzioni": [
+    "Manzoni",
+    "Foscolo",
+    "Leopardi",
+    "Verga"
+   ],
+   "giusta": 0,
+   "spiegazione": "ALESSANDRO MANZONI"
+  },
+  {
+   "q": "Qual è il deserto caldo più grande del mondo?",
+   "opzioni": [
+    "Gobi",
+    "Atacama",
+    "Sahara",
+    "Kalahari"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Quanti tasti ha un pianoforte classico?",
+   "opzioni": [
+    "72",
+    "96",
+    "88",
+    "76"
+   ],
+   "giusta": 2,
+   "spiegazione": "52 BIANCHI E 36 NERI"
+  },
+  {
+   "q": "Qual è la capitale della Mongolia?",
+   "opzioni": [
+    "Biškek",
+    "Ulan Bator",
+    "Astana",
+    "Tashkent"
+   ],
+   "giusta": 1
+  },
+  {
+   "q": "In che anno fu fondata Roma secondo la tradizione?",
+   "opzioni": [
+    "509 a.C.",
+    "1000 a.C.",
+    "476 d.C.",
+    "753 a.C."
+   ],
+   "giusta": 3,
+   "spiegazione": "21 APRILE 753 A.C."
+  },
+  {
+   "q": "Qual è il metallo che conduce meglio l'elettricità?",
+   "opzioni": [
+    "Rame",
+    "Oro",
+    "Argento",
+    "Alluminio"
+   ],
+   "giusta": 2,
+   "spiegazione": "ARGENTO, POI RAME E ORO"
+  },
+  {
+   "q": "Chi ha dipinto La notte stellata?",
+   "opzioni": [
+    "Van Gogh",
+    "Cézanne",
+    "Monet",
+    "Gauguin"
+   ],
+   "giusta": 0,
+   "spiegazione": "VINCENT VAN GOGH, 1889"
+  },
+  {
+   "q": "Qual è l'osso più lungo del corpo umano?",
+   "opzioni": [
+    "Perone",
+    "Omero",
+    "Femore",
+    "Tibia"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Qual è lo Stato più piccolo del mondo?",
+   "opzioni": [
+    "Malta",
+    "San Marino",
+    "Monaco",
+    "Vaticano"
+   ],
+   "giusta": 3,
+   "spiegazione": "CITTÀ DEL VATICANO"
+  },
+  {
+   "q": "In che anno è iniziata la Prima guerra mondiale?",
+   "opzioni": [
+    "1915",
+    "1912",
+    "1914",
+    "1918"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Quanto è veloce la luce, circa?",
+   "opzioni": [
+    "3 milioni km/s",
+    "3.000 km/s",
+    "30.000 km/s",
+    "300.000 km/s"
+   ],
+   "giusta": 3
+  },
+  {
+   "q": "Quanti anni dura una legislatura in Italia?",
+   "opzioni": [
+    "6",
+    "7",
+    "4",
+    "5"
+   ],
+   "giusta": 3
+  },
+  {
+   "q": "Chi ha creato Sherlock Holmes?",
+   "opzioni": [
+    "Edgar Allan Poe",
+    "Arthur Conan Doyle",
+    "Charles Dickens",
+    "Agatha Christie"
+   ],
+   "giusta": 1
+  },
+  {
+   "q": "Qual è l'unico mammifero capace di volare davvero?",
+   "opzioni": [
+    "Scoiattolo volante",
+    "Pipistrello",
+    "Colugo",
+    "Petauro"
+   ],
+   "giusta": 1,
+   "spiegazione": "GLI ALTRI PLANANO SOLTANTO"
+  },
+  {
+   "q": "Quale elemento ha numero atomico 1?",
+   "opzioni": [
+    "Idrogeno",
+    "Carbonio",
+    "Ossigeno",
+    "Elio"
+   ],
+   "giusta": 0
+  },
+  {
+   "q": "In quale città si trova la Sagrada Família?",
+   "opzioni": [
+    "Siviglia",
+    "Valencia",
+    "Madrid",
+    "Barcellona"
+   ],
+   "giusta": 3,
+   "spiegazione": "BARCELLONA, DI GAUDÍ"
+  },
+  {
+   "q": "Quanti lati ha un ettagono?",
+   "opzioni": [
+    "6",
+    "8",
+    "7",
+    "9"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Qual è il lago più grande d'Italia?",
+   "opzioni": [
+    "Trasimeno",
+    "Lago Maggiore",
+    "Lago di Garda",
+    "Lago di Como"
+   ],
+   "giusta": 2
+  }
+ ]
+}

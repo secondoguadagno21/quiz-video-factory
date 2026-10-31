@@ -17,7 +17,8 @@
     "giusta": "0x27C56F",
     "sbagliata": "0xE0453B",
     "countdown": "0xFFD24A",
-    "testo": "0xFFFFFF"
+    "testo": "0xFFFFFF",
+    "barra_traccia": "0x2A3A80"
   },
   "font": {
     "titolo": "assets/fonts/Anton-Regular.ttf",
@@ -61,5 +62,6 @@
         "outro": 12.0
       }
     }
-  }
+  },
+  "descrizione_footer": "📢 Se ti diverti con questi quiz, lascia un like 👍, iscriviti e attiva la campanella 🔔 per non perderti i prossimi video!"
 }

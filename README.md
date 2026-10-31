@@ -220,12 +220,37 @@ Network access. Aggiungi i domini, lascia spuntato "Allow package managers".
 Il server Airtable non si collega (403 dal proxy). Senza, niente pesca
 automatica dei video da emulare.
 
+## Pubblicazione su YouTube
+
+Catena completa in un comando:
+```bash
+python3 fabbrica.py quiz/cultura-generale-genio.json --non-in-elenco
+python3 fabbrica.py quiz/cultura-generale-genio.json --programma "2026-11-03 18:00"
+```
+`build.py` → `miniatura.py` → `pubblica.py`. Titolo, descrizione, tag, capitoli e testi
+della miniatura stanno nel blocco `"youtube"` della banca domande.
+
+### Attivarla (una volta sola, sul PC)
+1. Google Cloud Console, stesso progetto della chiave → API e servizi → Credenziali →
+   Crea credenziali → **ID client OAuth** → tipo **App desktop**.
+2. Copia ID client e secret nel file `.env` (vedi `.env.esempio`).
+3. `python autorizza_youtube.py` → si apre il browser → account del canale → Consenti.
+   Il token si salva da solo in `.env` e lo script stampa 3 righe.
+4. Incolla quelle 3 righe nelle variabili dell'ambiente cloud **Default**.
+   Da lì il cloud pubblica senza PC acceso.
+5. Schermata consenso OAuth → **Pubblica app** (In produzione): in modalità Test il
+   token scade ogni 7 giorni.
+6. **Verifica API (audit)**: Google blocca come *privati* i video caricati da progetti
+   non verificati. Finché il modulo "YouTube API Services – Audit and Quota Extension"
+   non è approvato, ogni video esce privato e va reso pubblico a mano da YouTube Studio
+   (un tocco dall'app). Dopo l'audit, la programmazione funziona da sola.
+7. Miniature personalizzate: il canale deve essere verificato col telefono (youtube.com/verify).
+
 ## Da fare, una volta sbloccato
 
 - [x] Analizzare i 13 video di riferimento → `ANALISI-RIFERIMENTI.md`
 - [ ] Leggere la libreria brand e i materiali dalle cartelle locali
-- [ ] Agganciare la pipeline YouTube già esistente (`pubblica.py`, canale
-      Benessere Network Etna Wellness, categoria 24 Intrattenimento)
+- [x] Pipeline di pubblicazione YouTube (`pubblica.py`, `fabbrica.py`) — manca solo l'autorizzazione OAuth
 - [ ] Template per tipo di quiz: emoji film, bandiere, immagini, indovinelli
 - [ ] Voci narranti sulle domande
 - [ ] Raccolta immagini per i quiz visivi

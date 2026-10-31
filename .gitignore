@@ -3,3 +3,5 @@ out/*.mp4
 __pycache__/
 *.pyc
 .env
+out/*.jpg
+.tmp_mini/

@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""
+Autorizza la fabbrica a pubblicare sul TUO canale YouTube. Si fa UNA volta, sul PC
+(serve il browser per dire "Consenti").
+
+  python3 autorizza_youtube.py                    # apre il browser, scrive il token in .env
+  python3 autorizza_youtube.py --da-token token.json   # riusa il token della vecchia pubblica.py
+
+Prima, nel file .env, servono:
+  YT_CLIENT_ID=....apps.googleusercontent.com
+  YT_CLIENT_SECRET=....
+(Google Cloud Console -> API e servizi -> Credenziali -> client OAuth di tipo "App desktop")
+
+Alla fine stampa le tre righe da incollare nelle impostazioni dell'ambiente cloud.
+"""
+import argparse, base64, hashlib, http.server, json, os, secrets, sys, threading
+import urllib.parse, urllib.request, urllib.error, webbrowser
+
+from analizza_video import carica_env, ROOT
+
+AUTH  = "https://accounts.google.com/o/oauth2/v2/auth"
+TOKEN = "https://oauth2.googleapis.com/token"
+SCOPE = " ".join([
+    "https://www.googleapis.com/auth/youtube.upload",     # caricare video e miniature
+    "https://www.googleapis.com/auth/youtube.readonly",   # sapere su che canale siamo
+])
+
+
+def salva_env(chiavi):
+    """Aggiorna (o crea) .env senza toccare le altre righe."""
+    p = os.path.join(ROOT, ".env")
+    righe = open(p, encoding="utf-8-sig").read().splitlines() if os.path.exists(p) else []
+    fatte = set()
+    for i, r in enumerate(righe):
+        k = r.split("=", 1)[0].strip().removeprefix("export ").strip()
+        if k in chiavi:
+            righe[i] = f"{k}={chiavi[k]}"; fatte.add(k)
+    righe += [f"{k}={v}" for k, v in chiavi.items() if k not in fatte]
+    open(p, "w", encoding="utf-8").write("\n".join(righe) + "\n")
+
+
+def canale(access):
+    q = urllib.parse.urlencode({"part": "snippet", "mine": "true"})
+    rq = urllib.request.Request(f"https://www.googleapis.com/youtube/v3/channels?{q}",
+                                headers={"Authorization": f"Bearer {access}"})
+    try:
+        it = json.load(urllib.request.urlopen(rq, timeout=30)).get("items", [])
+        return it[0]["snippet"]["title"] if it else "(nessun canale su questo account)"
+    except urllib.error.HTTPError:
+        return "(non verificabile)"
+
+
+def flusso_browser(cid, secret):
+    verifier  = secrets.token_urlsafe(64)
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
+    stato     = secrets.token_urlsafe(16)
+    preso     = {}
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            if q.get("state", [""])[0] == stato:
+                preso.update({k: v[0] for k, v in q.items()})
+            self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            msg = "Fatto! Puoi chiudere questa scheda." if "code" in preso else "Autorizzazione non riuscita."
+            self.wfile.write(f"<h2 style='font-family:sans-serif'>{msg}</h2>".encode())
+        def log_message(self, *a): pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    redirect = f"http://127.0.0.1:{srv.server_port}"
+    url = AUTH + "?" + urllib.parse.urlencode(dict(
+        client_id=cid, redirect_uri=redirect, response_type="code", scope=SCOPE,
+        access_type="offline", prompt="consent", state=stato,
+        code_challenge=challenge, code_challenge_method="S256"))
+
+    print("Si apre il browser. Scegli l'account del canale e premi Consenti.")
+    print("Se non si apre da solo, copia questo indirizzo nel browser:\n\n" + url + "\n")
+    webbrowser.open(url)
+    t = threading.Thread(target=lambda: [srv.handle_request() for _ in range(3) if "code" not in preso])
+    t.start(); t.join(timeout=300); srv.server_close()
+    if "code" not in preso:
+        sys.exit("Nessuna risposta dal browser entro 5 minuti. " + preso.get("error", ""))
+
+    body = urllib.parse.urlencode(dict(code=preso["code"], client_id=cid, client_secret=secret,
+                                       redirect_uri=redirect, grant_type="authorization_code",
+                                       code_verifier=verifier)).encode()
+    try:
+        tok = json.load(urllib.request.urlopen(TOKEN, body, timeout=30))
+    except urllib.error.HTTPError as e:
+        sys.exit("Google ha rifiutato lo scambio: " + e.read().decode()[:400])
+    if "refresh_token" not in tok:
+        sys.exit("Google non ha dato il refresh token. Revoca l'accesso su "
+                 "myaccount.google.com/permissions e rilancia.")
+    return tok["refresh_token"], tok["access_token"]
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--da-token", help="token.json salvato dalla libreria google-auth")
+    a = ap.parse_args()
+    carica_env()
+
+    if a.da_token:
+        t = json.load(open(a.da_token, encoding="utf-8"))
+        cid, secret, refresh = t.get("client_id"), t.get("client_secret"), t.get("refresh_token")
+        if not (cid and secret and refresh):
+            sys.exit("Nel token mancano client_id, client_secret o refresh_token.")
+        body = urllib.parse.urlencode(dict(client_id=cid, client_secret=secret,
+                                           refresh_token=refresh, grant_type="refresh_token")).encode()
+        try:
+            access = json.load(urllib.request.urlopen(TOKEN, body, timeout=30))["access_token"]
+        except urllib.error.HTTPError:
+            sys.exit("Quel token e' scaduto o revocato: rilancia senza --da-token.")
+    else:
+        cid    = os.environ.get("YT_CLIENT_ID", "").strip()
+        secret = os.environ.get("YT_CLIENT_SECRET", "").strip()
+        if not (cid and secret):
+            sys.exit("Mancano YT_CLIENT_ID e YT_CLIENT_SECRET nel file .env.\n"
+                     "  Google Cloud Console -> API e servizi -> Credenziali ->\n"
+                     "  Crea credenziali -> ID client OAuth -> tipo 'App desktop'.")
+        refresh, access = flusso_browser(cid, secret)
+
+    salva_env({"YT_CLIENT_ID": cid, "YT_CLIENT_SECRET": secret, "YT_REFRESH_TOKEN": refresh})
+    print(f"\nAutorizzato sul canale: {canale(access)}")
+    print("Salvato nel file .env (che resta sul PC).\n")
+    print("Per pubblicare anche dal cloud, incolla queste 3 righe nelle variabili")
+    print("dell'ambiente Default (accanto a YT_API_KEY):\n")
+    print(f"YT_CLIENT_ID={cid}\nYT_CLIENT_SECRET={secret}\nYT_REFRESH_TOKEN={refresh}")

@@ -62,6 +62,7 @@ class Factory:
                 lab_fs=int(H*0.068), cd_y=int(H*0.80), cd_fs=int(H*0.145),
                 ok_y=int(H*0.855), ok_fs=int(H*0.072),
                 tit_fs=int(H*0.105), sub_fs=int(H*0.072), tit_wrap=22,
+                barra=(x0, int(H*0.735), cw*2 + gx, int(H*0.024)),
             )
         cw, ch = W - int(W*0.13), int(H*0.068)       # 9:16 reel, opzioni in colonna
         return dict(
@@ -72,6 +73,7 @@ class Factory:
             opt_fs=int(H*0.034), lab_fs=int(H*0.040), cd_y=int(H*0.828),
             cd_fs=int(H*0.088), ok_y=int(H*0.833), ok_fs=int(H*0.040),
             tit_fs=int(H*0.056), sub_fs=int(H*0.043), tit_wrap=16,
+            barra=(int(W*0.065), int(H*0.745), cw, int(H*0.014)),
         )
 
     # ---------- utilita' di disegno ----------
@@ -127,14 +129,30 @@ class Factory:
             "-frames:v", "1", self.bgpng])
         return self.bgpng
 
-    def render(self, name, dur, vfilters, afilter=None):
+    def barra(self, dur):
+        """BRAND: barra del tempo che si svuota da destra a sinistra durante la domanda.
+        Due livelli: binario scuro fisso + barra accento che scorre fuori dal binario."""
+        G, c = self.G, self.c
+        bx, by, bw, bh = G["barra"]
+        trk = c.get("barra_traccia", "0x2A3A80")
+        return (f"color=c={trk}:s={bw}x{bh}:r={self.FPS}:d={dur}[trk];"
+                f"color=c={c['accento']}:s={bw}x{bh}:r={self.FPS}:d={dur}[pie];"
+                f"[trk][pie]overlay=x='-{bw}*t/{dur}':y=0:eval=frame[bar];"), (bx, by)
+
+    def render(self, name, dur, vfilters, afilter=None, barra=False):
         out = f"{REL}/{name}"
         chain = ",".join(vfilters) if vfilters else "null"
         a_in = afilter or f"anullsrc=r=44100:cl=stereo:d={dur}"
+        if barra:
+            pre, (bx, by) = self.barra(dur)
+            fc = (f"{pre}[0:v]{chain}[base];"
+                  f"[base][bar]overlay={bx}:{by}:shortest=1,format=yuv420p[v]")
+        else:
+            fc = f"[0:v]{chain},format=yuv420p[v]"
         sh(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
             "-loop", "1", "-t", str(dur), "-i", self.bgpng,
             "-f", "lavfi", "-i", a_in,
-            "-filter_complex", f"[0:v]{chain},format=yuv420p[v]",
+            "-filter_complex", fc,
             "-map", "[v]", "-map", "1:a", "-t", str(dur), "-r", str(self.FPS),
             "-c:v", "libx264", "-preset", self.preset, "-crf", str(self.crf),
             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-ar", "44100", out])
@@ -146,12 +164,12 @@ class Factory:
         y = int(self.H*0.30)
         vf  = [f"drawbox=x=0:y={y-int(self.H*0.04)}:w={self.W}:h={max(6,int(self.H*0.005))}"
                f":color={c['accento']}:t=fill"]
-        vf += self.righe("itit", wrap(titolo, G["tit_wrap"]), f["titolo"],
-                         G["tit_fs"], c["testo"], y, int(G["tit_fs"]*1.12))
-        y2 = y + int(self.H*0.20)
-        vf += self.righe("isub", wrap(sottotitolo, G["tit_wrap"]+6), f["opzioni"],
-                         G["sub_fs"], c["accento"], y2, int(G["sub_fs"]*1.12))
-        vf += [f"drawbox=x=0:y={y2+int(self.H*0.10)}:w={self.W}"
+        tit = wrap(titolo, G["tit_wrap"]); lh = int(G["tit_fs"]*1.12)
+        vf += self.righe("itit", tit, f["titolo"], G["tit_fs"], c["testo"], y, lh)
+        y2  = y + len(tit)*lh + int(self.H*0.03)       # sotto l'ultima riga del titolo
+        sub = wrap(sottotitolo, G["tit_wrap"]+6); slh = int(G["sub_fs"]*1.12)
+        vf += self.righe("isub", sub, f["opzioni"], G["sub_fs"], c["accento"], y2, slh)
+        vf += [f"drawbox=x=0:y={y2+len(sub)*slh+int(self.H*0.03)}:w={self.W}"
                f":h={max(6,int(self.H*0.005))}:color={c['accento']}:t=fill"]
         return self.render("00_intro.mp4", dur, vf,
                            afilter=f"sine=frequency=520:duration=0.18,apad=whole_dur={dur}")
@@ -172,7 +190,7 @@ class Factory:
         ticks = "".join(f"sine=frequency=880:duration=0.06,adelay={i*1000}|{i*1000}[t{i}];"
                         for i in range(n))
         a = f"{ticks}{''.join(f'[t{i}]' for i in range(n))}amix=inputs={n}:duration=longest,apad=whole_dur={dur}"
-        return self.render(f"10_q{idx:04d}.mp4", dur, vf, afilter=a)
+        return self.render(f"10_q{idx:04d}.mp4", dur, vf, afilter=a, barra=True)
 
     def risposta(self, idx, q, opzioni, giusta, dur, spiega=None):
         G, c, f = self.G, self.c, self.f
