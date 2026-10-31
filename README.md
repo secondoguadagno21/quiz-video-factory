@@ -101,3 +101,79 @@ Il mix è pesato sui medi, perché i telefoni i bassi non li riproducono.
 - **Voce narrante**: la rete di questo ambiente blocca ElevenLabs e OpenAI.
   Si sblocca aggiungendo i domini in Network access delle impostazioni dell'ambiente.
 - **Filmati stock di sfondo**: Pexels e Pixabay sono bloccati dalla stessa regola.
+
+---
+
+# Il piano completo
+
+## Formati
+
+| Formato | Misure | Dove | Comando |
+|---|---|---|---|
+| `reel` | 1080x1920 | TikTok, Reels, Shorts | `--formato reel` (predefinito) |
+| `youtube` | 1920x1080 | YouTube | `--formato youtube` |
+
+```bash
+python3 build.py quiz/cibo.json --formato youtube --max 85   # ~20 minuti
+```
+
+### Quante domande servono (formato youtube)
+
+| Domande | Durata |
+|---|---|
+| 30 | 7m 18s |
+| 50 | 11m 58s |
+| **85** | **20m 08s** |
+| 130 | 30m 38s |
+| 170 | 39m 58s |
+
+**Il collo di bottiglia non è il render, è la banca domande.**
+Il render gira a 0,68x il tempo reale: 20 minuti di video in ~14 minuti di macchina.
+Ma 85 domande vanno scritte, verificate e rese divertenti. È lì che serve il lavoro.
+
+## Cosa serve sbloccare (in ordine di importanza)
+
+### 1. Cartelle del tuo computer — BLOCCATO
+Nessuna cartella risulta condivisa. Senza, restano irraggiungibili la libreria
+brand Italia, gli audio e i materiali YouTube.
+**Come si sblocca:** sul tuo computer, app Claude → Impostazioni → Claude Code →
+Remote Control, e scegli le cartelle (quiz video, YouTube).
+
+### 2. Repo GitHub — BLOCCATO
+Il token è scaduto, e da qui un repo nuovo non si crea.
+**Come si sblocca:** riconnetti su https://claude.ai/connect-github, poi crea
+un repo privato vuoto `quiz-video-factory`. Il commit qui è già pronto a partire.
+
+### 3. Rete chiusa — BLOCCATO
+Questa singola impostazione blocca da sola **tre** cose che hai chiesto:
+
+| Serve per | Dominio bloccato |
+|---|---|
+| Voci narranti | `api.elevenlabs.io`, `api.openai.com` |
+| Foto e filmati stock | `pixabay.com`, `api.pexels.com` |
+| Ricerca video da emulare | quasi tutto il web |
+
+**Come si sblocca:** menu dell'ambiente cloud nella barra del titolo → Edit →
+Network access. Aggiungi i domini, lascia spuntato "Allow package managers".
+
+### 4. Airtable — NON CONNESSO
+Il server Airtable non si collega (403 dal proxy). Senza, niente pesca
+automatica dei video da emulare.
+
+## Da fare, una volta sbloccato
+
+- [ ] Leggere la libreria brand e i materiali dalle cartelle locali
+- [ ] Agganciare la pipeline YouTube già esistente (`pubblica.py`, canale
+      Benessere Network Etna Wellness, categoria 24 Intrattenimento)
+- [ ] Template per tipo di quiz: emoji film, bandiere, immagini, indovinelli
+- [ ] Voci narranti sulle domande
+- [ ] Raccolta immagini per i quiz visivi
+- [ ] Airtable come fonte di ispirazione e come calendario editoriale
+- [ ] Comando programmato: 3 video a settimana, generati e pubblicati da soli
+
+## Quello che manca da te
+
+La struttura dei tuoi video quiz. Il quiz **emoji film** di oggi non è
+visibile da qui: girava in locale e non è sincronizzato. Serve che tu lo
+incolli, o che condivida la cartella (punto 1).
+È da lì che nasce l'educazione del sistema: template, ritmo, tono, durate.
