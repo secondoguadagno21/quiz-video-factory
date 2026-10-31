@@ -139,10 +139,16 @@ brand Italia, gli audio e i materiali YouTube.
 **Come si sblocca:** sul tuo computer, app Claude → Impostazioni → Claude Code →
 Remote Control, e scegli le cartelle (quiz video, YouTube).
 
-### 2. Repo GitHub — BLOCCATO
-Il token è scaduto, e da qui un repo nuovo non si crea.
-**Come si sblocca:** riconnetti su https://claude.ai/connect-github, poi crea
-un repo privato vuoto `quiz-video-factory`. Il commit qui è già pronto a partire.
+### 2. Repo GitHub — FATTO
+Il codice vive in `secondoguadagno21/quiz-video-factory` (privato).
+Ogni sessione nuova su questo repo ritrova la fabbrica intera.
+
+### 2-bis. Chiave YouTube — FATTO
+`YT_API_KEY` salvata nelle impostazioni dell'ambiente, limitata alla sola
+YouTube Data API v3. Abilita `analizza_video.py` e `scopri_video.py`.
+Note per la pubblicazione automatica: il client OAuth `pubblica-quiz` dello
+stesso progetto ha il token che scade ogni 7 giorni finché l'app resta in
+modalità Test. Va portata In produzione prima di automatizzare.
 
 ### 3. Rete chiusa — BLOCCATO
 Questa singola impostazione blocca da sola **tre** cose che hai chiesto:
@@ -162,6 +168,7 @@ automatica dei video da emulare.
 
 ## Da fare, una volta sbloccato
 
+- [ ] Analizzare i 13 video di riferimento (`python3 analizza_video.py`)
 - [ ] Leggere la libreria brand e i materiali dalle cartelle locali
 - [ ] Agganciare la pipeline YouTube già esistente (`pubblica.py`, canale
       Benessere Network Etna Wellness, categoria 24 Intrattenimento)
