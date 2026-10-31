@@ -1,0 +1,4 @@
+.tmp/
+out/*.mp4
+__pycache__/
+*.pyc

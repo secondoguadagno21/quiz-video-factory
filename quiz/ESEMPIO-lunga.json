@@ -1,0 +1,10 @@
+{
+  "titolo": "QUIZ DIVERTENTI ITALIA",
+  "sottotitolo": "85 DOMANDE - QUANTE NE SAI?",
+  "_nota": "Per YouTube servono circa 85 domande per arrivare a 20 minuti. Il campo 'spiegazione' e' facoltativo: se c'e', appare al posto di RISPOSTA GIUSTA.",
+  "domande": [
+    { "q": "Quale città italiana è detta La Superba?",
+      "opzioni": ["Genova", "Napoli", "Torino", "Palermo"], "giusta": 0,
+      "spiegazione": "GENOVA - la chiamo' cosi' Petrarca" }
+  ]
+}

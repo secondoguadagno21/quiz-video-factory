@@ -1,0 +1,16 @@
+{
+  "titolo": "QUIZ DIVERTENTI ITALIA",
+  "sottotitolo": "QUANTE NE SAI?",
+  "domande": [
+    { "q": "Quale città italiana è detta La Superba?",
+      "opzioni": ["Genova", "Napoli", "Torino", "Palermo"], "giusta": 0 },
+    { "q": "In quale regione si trova il Lago di Braies?",
+      "opzioni": ["Veneto", "Trentino-Alto Adige", "Lombardia", "Friuli"], "giusta": 1 },
+    { "q": "Qual è il fiume più lungo d'Italia?",
+      "opzioni": ["Tevere", "Adige", "Po", "Arno"], "giusta": 2 },
+    { "q": "Quante sono le regioni italiane?",
+      "opzioni": ["18", "19", "20", "21"], "giusta": 2 },
+    { "q": "Dove si trova la Fontana di Trevi?",
+      "opzioni": ["Firenze", "Roma", "Milano", "Venezia"], "giusta": 1 }
+  ]
+}

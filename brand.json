@@ -1,0 +1,65 @@
+{
+  "brand": "Etna Wellness",
+  "canale": "Quiz Divertenti Italia",
+  "video": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "crf": 21,
+    "preset": "veryfast"
+  },
+  "colori": {
+    "sfondo_top": "0x0B1437",
+    "sfondo_bottom": "0x1B2A6B",
+    "accento": "0xFFD24A",
+    "card": "0xFFFFFF",
+    "card_testo": "0x0B1437",
+    "giusta": "0x27C56F",
+    "sbagliata": "0xE0453B",
+    "countdown": "0xFFD24A",
+    "testo": "0xFFFFFF"
+  },
+  "font": {
+    "titolo": "assets/fonts/Anton-Regular.ttf",
+    "domanda": "assets/fonts/Anton-Regular.ttf",
+    "opzioni": "assets/fonts/BebasNeue-Regular.ttf",
+    "cta": "assets/fonts/BebasNeue-Regular.ttf"
+  },
+  "tempi": {
+    "intro": 2.0,
+    "domanda": 5.0,
+    "risposta": 2.2,
+    "outro": 3.0
+  },
+  "cta_finale": "SEGUIMI PER ALTRI QUIZ",
+  "hashtag": "#quizitalia #quizdivertenti #culturagenerale #italia",
+  "audio": {
+    "volume_musica": 0.4
+  },
+  "formati": {
+    "reel": {
+      "w": 1080,
+      "h": 1920,
+      "fps": 30,
+      "layout": "colonna",
+      "tempi": {
+        "intro": 2.0,
+        "domanda": 5.0,
+        "risposta": 2.2,
+        "outro": 3.0
+      }
+    },
+    "youtube": {
+      "w": 1920,
+      "h": 1080,
+      "fps": 30,
+      "layout": "griglia",
+      "tempi": {
+        "intro": 6.0,
+        "domanda": 10.0,
+        "risposta": 4.0,
+        "outro": 12.0
+      }
+    }
+  }
+}
