@@ -33,9 +33,17 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
 - Nuove grafiche: si mettono in `assets/brand/` e si collegano in `brand.json`.
 
 ## Audio
-- **Voce narrante** (Google AI Studio, Gemini TTS, `voce.py`): legge il titolo, annuncia
-  i livelli, legge ogni domanda e la risposta giusta. Si accende da sola se c'è
-  `GEMINI_API_KEY`; voce e stile in `brand.json` → `"voce"`.
+- **Voce narrante**: legge il gancio, annuncia i livelli, legge ogni domanda e la
+  risposta giusta. **Voce scelta da Secondo: "Kira" (Google AI Studio), espressione
+  "promozione", stile "High energy, elongate vowels"** — femminile, giovane, squillante.
+  Mai voci maschili (Puck bocciata) né voci Microsoft (robotiche).
+- **Processo voce** (il piano gratuito Gemini dà solo 10 frasi TTS al giorno, niente
+  fatturazione): `python voce.py --copione quiz/x.json` → Secondo legge il copione in
+  AI Studio e manda un **audio unico** → `python importa_voce.py quiz/x.json --audio
+  voce.wav --trascrivi` lo taglia nelle frasi (`.cache_voce/esterna`) → `build.py`.
+  L'API Gemini (`voce.py`, `brand.json` → `"voce"`) serve solo a ritoccare singole frasi.
+- **Gancio**: il quiz entra nel vivo entro 7–10 s (max 20 s); la voce dice subito la
+  parola chiave del quiz, la stessa di titolo, descrizione e tag (`"voce": {"hook"}`).
 - Se la voce non è disponibile: **solo musica di sottofondo** + effetti QDI
   (`assets/sfx`: pop alla domanda, click a ogni numero della barra, brillio alla
   risposta giusta, whoosh sui cartelli). Mai video muti.

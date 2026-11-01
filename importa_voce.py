@@ -3,15 +3,18 @@
 Taglia un audio unico con tutto il copione nelle frasi del video. Dopo, build.py usa
 quelle frasi al posto delle chiamate a Gemini (zero richieste).
 
-  python3 importa_voce.py quiz/x.json --gemini                    # Gemini Leda, una richiesta per livello
-  python3 importa_voce.py quiz/x.json --audio voce.mp3 --srt voce.srt   # audio letto altrove (Fliki, ...)
-  python3 importa_voce.py quiz/x.json --audio voce.mp3            # senza SRT: taglia sulle pause
-  ... --prova                                                     # mostra i tagli, non scrive
+  python3 importa_voce.py quiz/x.json --audio voce.wav --trascrivi     # CONSIGLIATO: trascrive qui
+  python3 importa_voce.py quiz/x.json --audio voce.wav --srt voce.srt  # con un SRT fatto altrove
+  python3 importa_voce.py quiz/x.json --audio voce.wav                 # senza testo: sulle pause
+  python3 importa_voce.py quiz/x.json --gemini                         # Gemini via API, 1 richiesta/livello
+  ... --prova                                                          # mostra i tagli, non scrive
 
 Il copione da leggere: python3 voce.py --copione quiz/x.json (una frase per blocco).
-Senza SRT servono pause nette fra le frasi (almeno mezzo secondo), e il conto deve tornare.
-Con l'SRT il testo viene allineato parola per parola al copione, e il taglio va sulla pausa
-vera piu' vicina: cosi' non si taglia mai a meta' di una parola.
+--trascrivi ascolta l'audio in locale (faster-whisper, gratis) e trova l'istante di ogni
+parola: e' piu' preciso degli SRT automatici, che sbagliano lettere e numeri.
+Il testo viene allineato parola per parola al copione e il taglio va sulla pausa vera
+dopo l'ultima parola della frase: cosi' non si taglia mai a meta' di una parola.
+Senza testo servono pause nette fra le frasi, e il conto deve tornare.
 """
 import argparse, difflib, json, os, re, subprocess, sys, unicodedata
 import voce
@@ -55,6 +58,25 @@ def leggi_srt(path):
     return fuori
 
 
+def trascrivi(audio):
+    """Parole con il loro istante, ascoltate in locale. Il modello (~500 MB) si scarica
+    la prima volta e resta in cache."""
+    try:
+        import numpy as np
+        from faster_whisper import WhisperModel
+    except ImportError:
+        sys.exit("Serve faster-whisper:  pip install faster-whisper")
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+    print("  trascrivo l'audio (qualche minuto)...", flush=True)
+    # l'audio lo decodifica ffmpeg: il lettore interno di faster-whisper non regge tutti i file
+    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", audio, "-f", "s16le", "-ac", "1",
+                          "-ar", "16000", "-"], capture_output=True).stdout
+    segs, _ = WhisperModel("small", device="cpu", compute_type="int8").transcribe(
+        np.frombuffer(pcm, np.int16).astype(np.float32) / 32768, language="it",
+        word_timestamps=True, condition_on_previous_text=False)
+    return [(p, w.start) for s in segs for w in s.words for p in parole(w.word)]
+
+
 def tagli_da_pause(n, sil, dur):
     """Le n-1 pause piu' lunghe dentro l'audio sono i confini fra le frasi."""
     dentro = [s for s in sil if s[0] > 0.05 and s[1] < dur - 0.05]
@@ -70,24 +92,28 @@ def tagli_da_pause(n, sil, dur):
     return [(a + z) / 2 for a, z in scelte]
 
 
-def tagli_da_srt(righe, srt, sil):
-    """Inizio di ogni frase dall'allineamento parola per parola, poi spostato sulla pausa vicina."""
+def tagli_da_testo(righe, sw, sil):
+    """Inizio di ogni frase dall'allineamento parola per parola, poi spostato sulla pausa vicina.
+    sw = [(parola, istante)] da un SRT o dalla trascrizione locale."""
     cw = [(p, k) for k, r in enumerate(righe) for p in parole(r)]
-    sw = leggi_srt(srt)
     m = difflib.SequenceMatcher(None, [p for p, _ in cw], [p for p, _ in sw], autojunk=False)
     tempo = {}
     for a, b, size in m.get_matching_blocks():
         for i in range(size): tempo[a + i] = sw[b + i][1]
-    inizio = []
+    inizio, ultima = [], []
     for k in range(len(righe)):
         idx = [i for i, (_, kk) in enumerate(cw) if kk == k and i in tempo]
         if not idx: sys.exit(f"La frase {k+1} non si trova nell'SRT: {righe[k]}")
-        inizio.append(tempo[idx[0]])
-    tagli = []
-    for t in inizio[1:]:
-        vicine = [s for s in sil if t - 1.0 <= s[1] <= t + 0.4]
-        s = min(vicine, key=lambda s: abs(s[1] - t)) if vicine else None
-        tagli.append((s[0] + s[1]) / 2 if s else t - 0.08)
+        inizio.append(tempo[idx[0]]); ultima.append(tempo[idx[-1]])
+    tagli, prima = [], 0.0
+    for k in range(1, len(righe)):
+        # la pausa di confine comincia dopo l'ultima parola della frase prima (cosi' non si
+        # spezza "Risposta B ... Vivaldi"), dopo il taglio precedente, e prima della prima
+        # parola di questa: fra le candidate vince la piu' lunga
+        vicine = [s for s in sil if max(ultima[k-1] - 0.1, prima + 0.4) <= s[0] <= inizio[k] + 0.6]
+        s = max(vicine, key=lambda s: s[1] - s[0]) if vicine else None
+        prima = (s[0] + s[1]) / 2 if s else max(inizio[k] - 0.08, prima + 0.4)
+        tagli.append(prima)
     return tagli
 
 
@@ -96,7 +122,8 @@ if __name__ == "__main__":
     ap.add_argument("quiz")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--audio"); g.add_argument("--gemini", action="store_true")
-    ap.add_argument("--srt")
+    t = ap.add_mutually_exclusive_group()
+    t.add_argument("--srt"); t.add_argument("--trascrivi", action="store_true")
     ap.add_argument("--soglia", type=float, default=-40, help="dB sotto cui e' silenzio")
     ap.add_argument("--minimo", type=float, default=0.25, help="secondi minimi di una pausa")
     ap.add_argument("--prova", action="store_true"); ap.add_argument("--forza", action="store_true")
@@ -111,7 +138,8 @@ if __name__ == "__main__":
         if os.path.exists(a.audio): print(f"  voce: riuso {a.audio}")
         else: voce.audio_unico(quiz, a.audio)
     dur, sil = durata(a.audio), silenzi(a.audio, a.soglia, a.minimo)
-    tagli = tagli_da_srt(righe, a.srt, sil) if a.srt else tagli_da_pause(len(righe), sil, dur)
+    sw = leggi_srt(a.srt) if a.srt else trascrivi(a.audio) if a.trascrivi else None
+    tagli = tagli_da_testo(righe, sw, sil) if sw else tagli_da_pause(len(righe), sil, dur)
     confini = [0.0] + tagli + [dur]
 
     # controllo: ogni frase deve durare piu' o meno quanto il suo testo
@@ -125,17 +153,21 @@ if __name__ == "__main__":
         print(f"{k+1:>4} {confini[k]:7.2f} {d:5.2f}  {r[:60]}{nota}")
     print(f"\n{len(righe)} frasi, {dur:.0f}s di audio, {strane} da controllare")
     if a.prova: sys.exit("--prova: niente scritto.")
+    vuote = [k+1 for k in range(len(righe)) if confini[k+1] - confini[k] < 0.5]
+    if vuote: sys.exit(f"Frasi quasi vuote (taglio sbagliato): {vuote}. Controlla la tabella.")
     if strane > max(2, len(righe) // 30) and not a.forza:
         sys.exit("Troppe frasi con una durata strana: il taglio e' probabilmente sfasato. "
                  "Controlla la tabella (o usa --forza).")
 
     os.makedirs(voce.ESTERNA, exist_ok=True)
+    # bordi ripuliti dalla mezza pausa che ogni taglio si porta dietro
+    pulisci = "silenceremove=start_periods=1:start_threshold=-42dB"
     for k, r in enumerate(righe):
         out = os.path.join(voce.ESTERNA, f"{voce.firma(r)}.wav")
-        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", a.audio,
-                        "-ss", f"{confini[k]:.3f}", "-to", f"{confini[k+1]:.3f}", "-af",
-                        "silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
-                        "silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
+        # -ss/-to prima di -i: i filtri lavorano solo sul pezzo, non su tutto il file
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                        "-ss", f"{confini[k]:.3f}", "-to", f"{confini[k+1]:.3f}", "-i", a.audio, "-af",
+                        f"{pulisci},areverse,{pulisci},areverse,afade=t=in:d=0.02,"
                         "aresample=44100", "-ac", "2", out], check=True)
     print(f"FATTO: {len(righe)} frasi in {os.path.relpath(voce.ESTERNA, ROOT)}\n"
           f"  ora: python3 build.py {a.quiz} --formato youtube")

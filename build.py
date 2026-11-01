@@ -9,7 +9,7 @@ Le grafiche ufficiali (intro, transizione, barra, CTA, outro, logo, effetti, mus
 sfondi) sono elencate in brand.json -> "risorse". Se un file manca, il motore usa
 la versione generata, cosi' un video esce sempre.
 """
-import json, os, subprocess, sys, textwrap, shutil, argparse, time
+import json, os, re, subprocess, sys, textwrap, shutil, argparse, time
 import grafica, voce
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -130,7 +130,8 @@ class Factory:
         b = f":borderw={bordo}:bordercolor=black@0.6" if bordo else ""
         for i, ln in enumerate(lines):
             tf = txtfile(f"{tag}_{i}.txt", ln)
-            out.append(f"drawtext=fontfile='{font}':textfile='{tf}':fontsize={size}"
+            # expansion=none: un "78%" nel testo e' testo, non un comando di drawtext
+            out.append(f"drawtext=fontfile='{font}':textfile='{tf}':expansion=none:fontsize={size}"
                        f":fontcolor={color}{b}:x=(w-tw)/2:y={y0 + i*lh}")
         return out
 
@@ -157,10 +158,10 @@ class Factory:
                 vf.append(f"drawbox=x={x}:y={y}:w={G['lab_w']}:h={ch}:color={c['accento']}:t=fill")
             tl = txtfile(f"{tag}L{i}.txt", "ABCD"[i])
             to = txtfile(f"{tag}T{i}.txt", op)
-            vf.append(f"drawtext=fontfile='{f['opzioni']}':textfile='{tl}'"
+            vf.append(f"drawtext=fontfile='{f['opzioni']}':textfile='{tl}':expansion=none"
                       f":fontsize={G['lab_fs']}:fontcolor={lcol}"
                       f":x={x + G['lab_w']//2}-tw/2:y={y + (ch-G['lab_fs'])//2 - int(ch*0.06)}")
-            vf.append(f"drawtext=fontfile='{f['opzioni']}':textfile='{to}'"
+            vf.append(f"drawtext=fontfile='{f['opzioni']}':textfile='{to}':expansion=none"
                       f":fontsize={G['opt_fs']}:fontcolor={tcol}"
                       f":x={x + G['lab_w'] + int(cw*0.04)}:y={y + (ch-G['opt_fs'])//2 - int(ch*0.06)}")
         return vf
@@ -242,7 +243,29 @@ class Factory:
         return out
 
     # ---------- render di uno spezzone grafico ----------
-    def render(self, name, dur, vfilters, audio=None, barra=False, logo=True, mascotte=None, livelli=()):
+    def png_raggi(self):
+        out = os.path.join(TMP, "raggi.png")
+        if not os.path.exists(out): grafica.raggi(int(self.H*1.5), grafica.rgb(self.c["accento"]), out)
+        return f"{REL}/raggi.png"
+
+    def seq_coriandoli(self):
+        """Sequenza unica per tutto il video: si riusa a ogni risposta giusta."""
+        w, h = int(self.W*0.5), int(self.H*0.62)
+        pat = os.path.join(TMP, "cor_%02d.png")
+        if not os.path.exists(pat % 0):
+            col = [grafica.rgb(self.c[k]) for k in ("accento", "giusta", "card")] + [grafica.rgb("4FC3FF")]
+            grafica.coriandoli(w, h, col, 36, pat)
+        return f"{REL}/cor_%02d.png", w, h
+
+    def anima(self, livello, curva, tag):
+        """(png, x, y) -> (sequenza, x, y): la grafica entra con un rimbalzo."""
+        path, x, y = livello
+        pat = os.path.join(TMP, f"{tag}_%02d.png")
+        dx, dy = grafica.sequenza_scala(os.path.join(ROOT, path), curva, pat)
+        return (f"{REL}/{tag}_%02d.png", x - dx, y - dy)
+
+    def render(self, name, dur, vfilters, audio=None, barra=False, logo=True, mascotte=None, livelli=(),
+               raggi=False):
         out = f"{REL}/{name}"
         chain = ",".join(vfilters) if vfilters else "null"
         args = []
@@ -252,11 +275,24 @@ class Factory:
         else:
             args += ["-loop", "1", "-t", f"{dur}", "-i", self.bgpng]
         args += ["-i", audio] if audio else ["-f", "lavfi", "-i", f"anullsrc=r=44100:cl=stereo:d={dur}"]
-        fc, cur, n = [f"[0:v]{chain}[v0]"], "v0", 2
+        n = 2
+        if raggi:           # raggi di luce che girano lenti, sotto i testi
+            args += ["-loop", "1", "-t", f"{dur}", "-i", self.png_raggi()]
+            fc = [f"[{n}:v]format=rgba,rotate=a='t*0.35':c=none:ow=iw:oh=ih[rg];"
+                  f"[0:v][rg]overlay=(W-w)/2:(H-h)/2[b0];[b0]{chain}[v0]"]
+            n += 1
+        else:
+            fc = [f"[0:v]{chain}[v0]"]
+        cur = "v0"
         for path, x, y, comparsa in livelli:               # grafiche PNG (badge, card)
-            args += ["-loop", "1", "-t", f"{dur}", "-i", path]
-            fade = f"format=rgba,fade=t=in:st={comparsa:.2f}:d=0.18:alpha=1," if comparsa else ""
-            fc.append(f"[{n}:v]{fade}null[g{n}];[{cur}][g{n}]overlay={x}:{y}[v{n}]")
+            if "%" in path:                                # sequenza animata (rimbalzo, coriandoli)
+                args += ["-framerate", str(self.FPS), "-i", path]
+                fc.append(f"[{n}:v]format=rgba,setpts=PTS+{comparsa or 0:.3f}/TB[g{n}];"
+                          f"[{cur}][g{n}]overlay={x}:{y}:eof_action=repeat[v{n}]")
+            else:
+                args += ["-loop", "1", "-t", f"{dur}", "-i", path]
+                fade = f"format=rgba,fade=t=in:st={comparsa:.2f}:d=0.18:alpha=1," if comparsa else ""
+                fc.append(f"[{n}:v]{fade}null[g{n}];[{cur}][g{n}]overlay={x}:{y}[v{n}]")
             cur, n = f"v{n}", n+1
         if logo and self.R["logo"]:                         # icona QDI in alto a destra
             lh, ly = self.G["logo"]
@@ -333,7 +369,7 @@ class Factory:
         v, vd = self.parla(hook)
         if v: dur = max(dur, vd + 1.2)
         a = self.suoni("a_intro", dur, [("livello", 0)] + ([("voce:" + v, 0.5)] if v else []))
-        return self.render("05_titolo.mp4", dur, vf, audio=a, logo=False,
+        return self.render("05_titolo.mp4", dur, vf, audio=a, logo=False, raggi=True,
                            mascotte=(G["masc_h"], yl + int(self.H*0.04)))
 
     def livello(self, idx, nome, dur):
@@ -350,20 +386,24 @@ class Factory:
         v, vd = self.parla(voce.frase_livello(nome))
         if v: dur = max(dur, vd + 0.8)
         a = self.suoni(f"a_lv{idx}", dur, [("livello", 0)] + ([("voce:" + v, 0.3)] if v else []))
-        return self.render(f"07_lv{idx}.mp4", dur, vf, audio=a, logo=True)
+        return self.render(f"07_lv{idx}.mp4", dur, vf, audio=a, logo=True, raggi=True)
 
     def domanda(self, idx, q, opzioni, dur):
         G, c, f = self.G, self.c, self.f
         vf = self.righe(f"qt{idx}", wrap(q, G["q_wrap"]), f["domanda"],
                         G["q_fs"], c["testo"], G["q_y"], G["q_lh"], bordo=3)
-        vf = [v + ":alpha='min(1,t/0.3)'" for v in vf]      # la domanda entra in dissolvenza
+        # la domanda entra in dissolvenza scivolando dall'alto
+        vf = [re.sub(r":y=(\d+)$", r":y='\1-40*pow(max(0,1-t/0.35),2)'", v) + ":alpha='min(1,t/0.3)'"
+              for v in vf]
         # le card entrano una alla volta: piu' ritmo, l'occhio segue le opzioni
         entra = [0.35 + 0.18*i for i in range(len(opzioni))]
         v, vd = self.parla(q)
         if v and self.R["barra"]:          # tempo di lettura = durata della frase, niente buchi
             dur = round(max(dur - self.barra_len, vd + 0.6) + self.barra_len, 2)
         liv = [self.png_badge(idx + 1) + (None,)]
-        liv += [self.png_card(f"q{idx}", i, op, "neutra") + (entra[i],) for i, op in enumerate(opzioni)]
+        # ogni card entra con un rimbalzo (piccola -> 112% -> 100%)
+        liv += [self.anima(self.png_card(f"q{idx}", i, op, "neutra"), grafica.POP, f"pq{idx}_{i}")
+                + (entra[i],) for i, op in enumerate(opzioni)]
         ev = [("domanda", 0)] + [("tick", t) for t in entra] + ([("voce:" + v, 0.25)] if v else [])
         if self.R["barra"]:
             # la barra QDI ha gia' i numeri 5-4-3-2-1: tick a ogni numero
@@ -386,8 +426,17 @@ class Factory:
         vf += self.righe(f"rok{idx}", wrap(testo, G["q_wrap"]+8), f["titolo"],
                          G["ok_fs"], c["accento"], G["ok_y"], int(G["ok_fs"]*1.12), bordo=4)
         liv = [self.png_badge(idx + 1) + (None,)]
-        liv += [self.png_card(f"r{idx}", i, op, "giusta" if i == giusta else "spenta") + (None,)
-                for i, op in enumerate(opzioni)]
+        for i, op in enumerate(opzioni):
+            card = self.png_card(f"r{idx}", i, op, "giusta" if i == giusta else "spenta")
+            if i == giusta: card = self.anima(card, grafica.PULSA, f"pr{idx}")   # la giusta pulsa
+            liv.append(card + (0.0 if i == giusta else None,))
+        # coriandoli QDI che esplodono dal centro della risposta giusta
+        cw, ch = self.G["card"]; gx, gy = self.G["gap"]
+        cols = 2 if self.layout == "griglia" else 1
+        r_, c_ = divmod(giusta, cols)
+        cx = self.G["opt_x0"] + c_*(cw + gx) + cw//2; cy = self.G["opt_y0"] + r_*(ch + gy) + ch//2
+        pat, w_, h_ = self.seq_coriandoli()
+        liv.append((pat, cx - w_//2, cy - h_//2, 0.05))
         v, vd = self.parla(voce.frase_risposta(opzioni, giusta))
         if v: dur = max(dur, vd + 0.9)
         a = self.suoni(f"a_r{idx}", dur, [("giusta", 0)] + ([("voce:" + v, 0.35)] if v else []))
@@ -555,7 +604,9 @@ def main():
             lufs = float(righe[-1].split()[1])
             if abs(lufs + 14) > 0.4:
                 tmp2 = out + ".tmp.mp4"
-                ffmpeg("-i", out, "-c:v", "copy", "-af", f"volume={-14 - lufs:.2f}dB,alimiter=limit=0.97",
+                # tetto a -1,5 dB: con 0.97 la ricodifica AAC portava i picchi sopra 0 dBFS
+                ffmpeg("-i", out, "-c:v", "copy", "-af",
+                       f"volume={-14 - lufs:.2f}dB,alimiter=limit=0.84:level=disabled",
                        "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
                        "-movflags", "+faststart", "-f", "mp4", tmp2)
                 os.replace(tmp2, out)

@@ -73,6 +73,67 @@ def badge(n, d, c, fonts, out):
     return out
 
 
+def sequenza_scala(png, scale, out_pattern):
+    """Fotogrammi di un rimbalzo: la stessa grafica a scale diverse, centrata su una tela
+    fissa. ffmpeg non sa animare una scala senza cambiare misura al flusso, quindi il
+    rimbalzo si prepara qui e si sovrappone come sequenza di immagini."""
+    src = Image.open(png).convert("RGBA")
+    top = max(scale)
+    W, H = int(src.width * top) + 2, int(src.height * top) + 2
+    for i, s in enumerate(scale):
+        tela = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        if s > 0.02:
+            im = src.resize((max(1, int(src.width * s)), max(1, int(src.height * s))), Image.LANCZOS)
+            tela.alpha_composite(im, ((W - im.width) // 2, (H - im.height) // 2))
+        tela.save(out_pattern % i)
+    return (W - src.width) // 2, (H - src.height) // 2      # di quanto spostare in alto a sinistra
+
+
+# curve dei rimbalzi, un valore per fotogramma a 30 fps
+POP   = [0.35, 0.62, 0.86, 1.04, 1.12, 1.10, 1.04, 0.99, 0.98, 1.0]
+PULSA = [1.0, 1.05, 1.10, 1.13, 1.12, 1.08, 1.03, 0.99, 0.98, 1.0, 1.02, 1.03, 1.02, 1.0]
+
+
+def coriandoli(w, h, colori, n, out_pattern, seme=7):
+    """Esplosione di coriandoli dal centro: rettangolini che ruotano e ricadono."""
+    import math, random
+    rnd = random.Random(seme)
+    pezzi = []
+    for _ in range(160):
+        ang = rnd.uniform(0, 2 * math.pi); v = rnd.uniform(0.4, 1.0) * min(w, h) * 0.065
+        pezzi.append(dict(vx=math.cos(ang) * v * 1.4, vy=math.sin(ang) * v - min(w, h) * 0.025,
+                          col=rnd.choice(colori), lw=rnd.randint(12, 26), lh=rnd.randint(7, 14),
+                          rot=rnd.uniform(0, 360), vr=rnd.uniform(-25, 25)))
+    for f in range(n):
+        img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        alfa = 255 if f < n * 0.6 else int(255 * (n - 1 - f) / (n * 0.4))   # l'ultimo e' vuoto
+        for p in pezzi:
+            x = w / 2 + p["vx"] * f * 0.92 ** f * 1.6
+            y = h / 2 + p["vy"] * f + 0.9 * f * f
+            q = Image.new("RGBA", (p["lw"], p["lh"]), p["col"][:3] + (alfa,))
+            q = q.rotate(p["rot"] + p["vr"] * f, expand=True)
+            if 0 <= x < w and 0 <= y < h: img.alpha_composite(q, (int(x), int(y)))
+        img.save(out_pattern % f)
+
+
+def raggi(d, colore, out, n=18):
+    """Raggi di luce che partono dal centro e sfumano verso i bordi: girano dietro i titoli."""
+    import math
+    img = Image.new("RGBA", (d, d), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(img)
+    cx = cy = d / 2
+    for i in range(n):
+        a0 = 2 * math.pi * i / n; a1 = a0 + math.pi / n * 0.9
+        dr.polygon([(cx, cy), (cx + d * math.cos(a0), cy + d * math.sin(a0)),
+                    (cx + d * math.cos(a1), cy + d * math.sin(a1))], fill=colore[:3] + (60,))
+    m = Image.new("L", (d, d), 0)
+    for r in range(d // 2, 0, -4):                         # sfumatura radiale verso il bordo
+        ImageDraw.Draw(m).ellipse([cx - r, cy - r, cx + r, cy + r], fill=int(255 * (1 - r / (d / 2)) ** 0.6))
+    img.putalpha(Image.composite(img.split()[3], Image.new("L", (d, d), 0), m))
+    img.filter(ImageFilter.GaussianBlur(3)).save(out)
+    return out
+
+
 def card(w, h, lettera, testo, stato, c, fonts, out):
     """stato: 'neutra' | 'giusta' | 'spenta'."""
     pad = max(10, h // 8)

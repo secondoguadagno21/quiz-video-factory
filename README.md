@@ -166,20 +166,30 @@ Il mix è pesato sui medi, perché i telefoni i bassi non li riproducono.
 
 ## Voce narrante
 
-Voce femminile giovane e squillante (Gemini **Leda**, vedi `brand.json` → `"voce"`).
+Voce del canale: **"Kira"** su Google AI Studio, espressione **"promozione"**, stile
+**"High energy, elongate vowels"** — femminile, giovane, squillante.
 Il piano gratuito di Gemini concede **10 richieste TTS al giorno**, e frase per frase un
 quiz da 51 domande ne chiede ~110. Per questo il video si legge in un **audio unico**:
 
 ```bash
 python3 voce.py --copione quiz/x.json            # il copione: out/x-copione.txt
-python3 importa_voce.py quiz/x.json --gemini     # Gemini, una richiesta per livello
-python3 importa_voce.py quiz/x.json --audio voce.mp3 --srt voce.srt   # audio fatto altrove
+# -> leggerlo in AI Studio con la voce Kira, scaricare il .wav
+python3 importa_voce.py quiz/x.json --audio voce.wav --trascrivi   # taglia nelle frasi
 python3 build.py quiz/x.json --formato youtube
 ```
 
-`importa_voce.py` taglia l'audio nelle frasi del copione (con l'SRT parola per parola,
-senza SRT sulle pause) e prima mostra la tabella dei tagli. Le frasi che mancano le
-chiede a Gemini, se c'è la chiave: così l'API serve solo per i ritocchi.
+`importa_voce.py` ascolta l'audio in locale (faster-whisper, `pip install faster-whisper`),
+trova l'istante di ogni parola, lo allinea al copione e taglia sulle pause vere; prima
+mostra la tabella dei tagli e si ferma se una frase ha una durata strana. Accetta anche
+un SRT (`--srt`), ma gli SRT automatici sbagliano lettere e numeri: meglio `--trascrivi`.
+Le frasi che mancano le chiede a Gemini, se c'è la chiave: l'API serve solo per i ritocchi.
+
+## Effetti grafici
+
+Card delle risposte che entrano con un rimbalzo, domanda che scivola dall'alto,
+risposta giusta che pulsa con un'esplosione di coriandoli QDI, raggi di luce che girano
+dietro titolo e cartelli dei livelli. Tutto disegnato da `grafica.py` (Pillow) e montato
+da `build.py`: nessun programma esterno.
 
 ## Cosa manca ancora (e perché)
 - **Filmati stock di sfondo**: Pexels e Pixabay sono bloccati dalla stessa regola.
