@@ -11,7 +11,7 @@ import base64, hashlib, json, os, subprocess, sys, time, urllib.error, urllib.re
 
 ROOT  = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(ROOT, ".cache_voce")
-API   = "https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={k}"
+API   = "https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent"
 
 
 def config():
@@ -47,15 +47,20 @@ def di(testo, stile=None):
             "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voce}}},
         },
     }).encode()
-    url = API.format(m=modello, k=os.environ["GEMINI_API_KEY"].strip())
+    url = API.format(m=modello)
+    # chiave nell'intestazione: vale sia per le chiavi classiche (AIza...) sia per le nuove
+    head = {"Content-Type": "application/json", "x-goog-api-key": os.environ["GEMINI_API_KEY"].strip()}
     for tent in range(5):
         try:
-            rq = urllib.request.Request(url, body, {"Content-Type": "application/json"})
+            rq = urllib.request.Request(url, body, head)
             r = json.load(urllib.request.urlopen(rq, timeout=120))
             parte = r["candidates"][0]["content"]["parts"][0]["inlineData"]
             break
         except urllib.error.HTTPError as e:
             err = e.read().decode()[:400]
+            if e.code in (401, 403):
+                raise SystemExit("Voce: chiave rifiutata. Controlla che sia di Google AI Studio "
+                                 "(aistudio.google.com -> Get API key) e copiata intera.\n  " + err)
             if e.code == 429 or e.code >= 500:            # troppe richieste: aspetta e riprova
                 time.sleep(8 * (tent + 1)); continue
             raise SystemExit(f"Voce: Google ha rifiutato la richiesta ({e.code}): {err}")
