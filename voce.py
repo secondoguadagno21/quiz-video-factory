@@ -85,7 +85,44 @@ def di(testo, stile=None):
     return os.path.relpath(out, ROOT).replace("\\", "/")
 
 
+# ---------- le frasi del video: le usano sia build.py sia il copione ----------
+def frase_hook(quiz):
+    return (quiz.get("voce", {}).get("hook") or
+            f"{quiz['titolo']} {quiz.get('sottotitolo', '')}. Tieni il conto e scrivi il punteggio nei commenti. Via!")
+
+
+def frase_livello(nome):
+    parti = [p.strip() for p in nome.split(" - ", 1)]
+    frase = {"facile": "Si comincia col riscaldamento!", "medio": "Adesso si fa sul serio!",
+             "difficile": "Solo per veri geni!"}.get(parti[-1].lower(), "")
+    return f"{parti[0]}! {parti[1] if len(parti) > 1 else ''}. {frase}"
+
+
+def frase_risposta(opzioni, giusta):
+    return f"Risposta {'ABCD'[giusta]}: {opzioni[giusta]}!"
+
+
+def copione(quiz):
+    """Tutte le frasi, nell'ordine in cui le dice il video."""
+    cap = {i: nome for i, nome in quiz.get("capitoli") or []}
+    righe = [frase_hook(quiz)]
+    for i, d in enumerate(quiz["domande"]):
+        if i in cap: righe.append(frase_livello(cap[i]))
+        righe += [d["q"], frase_risposta(d["opzioni"], d["giusta"])]
+    return righe
+
+
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["--copione"]:
+        # una frase per riga, riga vuota in mezzo: chi legge (o il TTS) fa la pausa
+        quiz = json.load(open(sys.argv[2], encoding="utf-8"))
+        base = os.path.splitext(os.path.basename(sys.argv[2]))[0]
+        dest = os.path.join(ROOT, "out", f"{base}-copione.txt")
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        righe = copione(quiz)
+        open(dest, "w", encoding="utf-8").write("\n\n".join(righe) + "\n")
+        print(f"Copione: {dest}\n  {len(righe)} frasi, {sum(len(r) for r in righe)} caratteri")
+        sys.exit(0)
     if not attiva(): sys.exit("Manca GEMINI_API_KEY (Google AI Studio -> Get API key).")
     p = di(" ".join(sys.argv[1:]) or "Benvenuti a Quiz Divertenti Italia! Siete pronti?")
     os.makedirs(os.path.join(ROOT, "out"), exist_ok=True)

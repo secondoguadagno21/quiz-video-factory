@@ -317,7 +317,7 @@ class Factory:
         return out
 
     # ---------- spezzoni ----------
-    def intro(self, titolo, sottotitolo, dur, hook=None):
+    def intro(self, titolo, sottotitolo, dur, hook):
         G, c, f = self.G, self.c, self.f
         y = int(self.H*0.22)
         vf  = [f"drawbox=x=0:y={y-int(self.H*0.04)}:w={self.W}:h={max(6,int(self.H*0.005))}"
@@ -330,7 +330,7 @@ class Factory:
         yl  = y2 + len(sub)*slh + int(self.H*0.03)
         vf += [f"drawbox=x=0:y={yl}:w={self.W}:h={max(6,int(self.H*0.005))}:color={c['accento']}:t=fill"]
         # gancio: entro pochi secondi, con le parole chiave di titolo, descrizione e tag
-        v, vd = self.parla(hook or f"{titolo} {sottotitolo}. Tieni il conto e scrivi il punteggio nei commenti. Via!")
+        v, vd = self.parla(hook)
         if v: dur = max(dur, vd + 1.2)
         a = self.suoni("a_intro", dur, [("livello", 0)] + ([("voce:" + v, 0.5)] if v else []))
         return self.render("05_titolo.mp4", dur, vf, audio=a, logo=False,
@@ -347,9 +347,7 @@ class Factory:
             vf += self.righe(f"lvs{idx}", [parti[1].upper()], f["opzioni"], int(G["sub_fs"]*1.3),
                              c["testo"], y + int(G["tit_fs"]*1.75), 0, bordo=3)
         self.capitoli.append((self.clock, nome))
-        frase = {"facile": "Si comincia col riscaldamento!", "medio": "Adesso si fa sul serio!",
-                 "difficile": "Solo per veri geni!"}.get(parti[-1].lower(), "")
-        v, vd = self.parla(f"{parti[0]}! {parti[1] if len(parti) > 1 else ''}. {frase}")
+        v, vd = self.parla(voce.frase_livello(nome))
         if v: dur = max(dur, vd + 0.8)
         a = self.suoni(f"a_lv{idx}", dur, [("livello", 0)] + ([("voce:" + v, 0.3)] if v else []))
         return self.render(f"07_lv{idx}.mp4", dur, vf, audio=a, logo=True)
@@ -390,7 +388,7 @@ class Factory:
         liv = [self.png_badge(idx + 1) + (None,)]
         liv += [self.png_card(f"r{idx}", i, op, "giusta" if i == giusta else "spenta") + (None,)
                 for i, op in enumerate(opzioni)]
-        v, vd = self.parla(f"Risposta {'ABCD'[giusta]}: {opzioni[giusta]}!")
+        v, vd = self.parla(voce.frase_risposta(opzioni, giusta))
         if v: dur = max(dur, vd + 0.9)
         a = self.suoni(f"a_r{idx}", dur, [("giusta", 0)] + ([("voce:" + v, 0.35)] if v else []))
         return self.render(f"20_r{idx:04d}.mp4", dur, vf, audio=a, livelli=liv)
@@ -489,7 +487,7 @@ def main():
     t0 = time.time(); segs = []
     if yt and fac.R["intro"]: segs.append(fac.clip("00_intro.mp4", "intro"))
     segs.append(fac.intro(data["titolo"], data.get("sottotitolo", ""), t["intro"],
-                          data.get("voce", {}).get("hook")))
+                          voce.frase_hook(data)))
     for i, d in enumerate(dom):
         if i == cta_dopo and yt and fac.R["cta"]:
             segs.append(fac.clip(f"06_cta{i}.mp4", "cta"))
