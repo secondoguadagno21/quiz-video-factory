@@ -1,23 +1,23 @@
 {
  "titolo": "SE NE FAI 30 CORRETTE SEI UN GENIO!",
- "sottotitolo": "45 DOMANDE - 3 LIVELLI",
+ "sottotitolo": "51 DOMANDE - 3 LIVELLI",
  "capitoli": [
   [
    0,
    "Livello 1 - Facile"
   ],
   [
-   15,
+   17,
    "Livello 2 - Medio"
   ],
   [
-   30,
+   34,
    "Livello 3 - Difficile"
   ]
  ],
  "youtube": {
   "titolo": "SE NE FAI 30 CORRETTE SEI UN GENIO! 🧠🇮🇹 | Quiz di Cultura Generale",
-  "descrizione": "Quanto è forte la tua cultura generale? 🧠🔥\n\n45 domande in 3 livelli: si parte facile e si arriva a quelle che fanno sudare. Hai 10 secondi per ogni risposta.\n\nTieni il conto e scrivi il tuo punteggio nei commenti! 💬\nSfida i tuoi amici e condividi il quiz 🚀",
+  "descrizione": "Quanto è forte la tua cultura generale? 🧠🔥\n\n51 domande in 3 livelli: si parte facile e si arriva a quelle che fanno sudare. Hai 10 secondi per ogni risposta.\n\nTieni il conto e scrivi il tuo punteggio nei commenti! 💬\nSfida i tuoi amici e condividi il quiz 🚀",
   "tag": [
    "quiz cultura generale",
    "quiz italiano",
@@ -31,7 +31,7 @@
   "miniatura": {
    "riga1": "SE NE FAI 30",
    "riga2": "SEI UN GENIO!",
-   "badge": "45 DOMANDE"
+   "badge": "51 DOMANDE"
   }
  },
  "domande": [
@@ -98,6 +98,16 @@
    "giusta": 3
   },
   {
+   "q": "In quale città si trova la Torre Eiffel?",
+   "opzioni": [
+    "Roma",
+    "Parigi",
+    "Londra",
+    "Bruxelles"
+   ],
+   "giusta": 1
+  },
+  {
    "q": "In quale città si trova il Colosseo?",
    "opzioni": [
     "Milano",
@@ -124,6 +134,16 @@
     "100",
     "60",
     "90"
+   ],
+   "giusta": 2
+  },
+  {
+   "q": "Quanti colori ha l'arcobaleno?",
+   "opzioni": [
+    "6",
+    "9",
+    "7",
+    "5"
    ],
    "giusta": 2
   },
@@ -256,6 +276,17 @@
    "spiegazione": "EVEREST, 8.849 METRI"
   },
   {
+   "q": "Qual è la capitale della Turchia?",
+   "opzioni": [
+    "Smirne",
+    "Antalya",
+    "Istanbul",
+    "Ankara"
+   ],
+   "giusta": 3,
+   "spiegazione": "ANKARA, NON ISTANBUL!"
+  },
+  {
    "q": "Quale pianeta è chiamato Pianeta Rosso?",
    "opzioni": [
     "Marte",
@@ -264,6 +295,17 @@
     "Venere"
    ],
    "giusta": 0
+  },
+  {
+   "q": "Chi ha affrescato la volta della Cappella Sistina?",
+   "opzioni": [
+    "Giotto",
+    "Leonardo",
+    "Michelangelo",
+    "Raffaello"
+   ],
+   "giusta": 2,
+   "spiegazione": "MICHELANGELO BUONARROTI"
   },
   {
    "q": "Chi ha composto Le quattro stagioni?",
@@ -436,6 +478,17 @@
    "giusta": 3
   },
   {
+   "q": "In che anno cadde l'Impero romano d'Occidente?",
+   "opzioni": [
+    "395 d.C.",
+    "410 d.C.",
+    "476 d.C.",
+    "553 d.C."
+   ],
+   "giusta": 2,
+   "spiegazione": "476 D.C., CON ROMOLO AUGUSTOLO"
+  },
+  {
    "q": "Quanti anni dura una legislatura in Italia?",
    "opzioni": [
     "6",
@@ -454,6 +507,16 @@
     "Agatha Christie"
    ],
    "giusta": 1
+  },
+  {
+   "q": "Quante corde ha un violino?",
+   "opzioni": [
+    "6",
+    "5",
+    "3",
+    "4"
+   ],
+   "giusta": 3
   },
   {
    "q": "Qual è l'unico mammifero capace di volare davvero?",

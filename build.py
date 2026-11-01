@@ -10,6 +10,7 @@ sfondi) sono elencate in brand.json -> "risorse". Se un file manca, il motore us
 la versione generata, cosi' un video esce sempre.
 """
 import json, os, subprocess, sys, textwrap, shutil, argparse, time
+import grafica, voce
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 TMP  = os.path.join(ROOT, ".tmp")
@@ -83,6 +84,7 @@ class Factory:
         self.barra_len = durata(self.R["barra"]) if self.R["barra"] else 0
         # linea del tempo: serve per i capitoli e per abbassare la musica sulle clip
         self.clock, self.capitoli, self.silenzio, self.attenua = 0.0, [], [], []
+        self.voce = voce.attiva()
 
     def _geometria(self):
         """Misure calcolate sul formato: niente numeri magici copiati a mano."""
@@ -103,6 +105,7 @@ class Factory:
                 barra=(x0, int(H*0.735), cw*2 + gx, int(H*0.024)),     # barra generata
                 barra_qdi=((W-bw)//2, int(H*0.725), bw),                # barra ufficiale
                 logo=(int(H*0.15), int(H*0.025)), masc_h=int(H*0.26),
+                badge_d=int(H*0.13), badge_xy=(int(W*0.025), int(H*0.03)),
             )
         cw, ch = W - int(W*0.13), int(H*0.068)       # 9:16 reel, opzioni in colonna
         bw = int(W*0.93)
@@ -117,6 +120,7 @@ class Factory:
             barra=(int(W*0.065), int(H*0.745), cw, int(H*0.014)),
             barra_qdi=((W-bw)//2, int(H*0.725), bw),
             logo=(int(H*0.085), int(H*0.02)), masc_h=int(H*0.14),
+            badge_d=int(H*0.07), badge_xy=(int(W*0.05), int(H*0.085)),
         )
 
     # ---------- utilita' di disegno ----------
@@ -161,6 +165,29 @@ class Factory:
                       f":x={x + G['lab_w'] + int(cw*0.04)}:y={y + (ch-G['opt_fs'])//2 - int(ch*0.06)}")
         return vf
 
+    def parla(self, testo):
+        """(percorso_wav, durata) oppure (None, 0) se la voce non e' attiva."""
+        if not self.voce: return None, 0.0
+        p = voce.di(testo)
+        return p, durata(p)
+
+    def png_badge(self, n):
+        d = self.G["badge_d"]
+        out = os.path.join(TMP, f"badge{n}.png")
+        if not os.path.exists(out): grafica.badge(n, d, self.c, self.f, out)
+        pad = d // 8
+        return (f"{REL}/badge{n}.png", self.G["badge_xy"][0] - pad, self.G["badge_xy"][1] - pad)
+
+    def png_card(self, tag, i, testo, stato):
+        G = self.G
+        cw, ch = G["card"]; gx, gy = G["gap"]
+        cols = 2 if self.layout == "griglia" else 1
+        r, col = divmod(i, cols)
+        x = G["opt_x0"] + col*(cw + gx); y = G["opt_y0"] + r*(ch + gy)
+        nome = f"card_{tag}_{i}_{stato}.png"
+        _, pad = grafica.card(cw, ch, "ABCD"[i], testo, stato, self.c, self.f, os.path.join(TMP, nome))
+        return (f"{REL}/{nome}", x - pad, y - pad)
+
     # ---------- sfondo ----------
     def make_bg(self):
         """Sfumatura blu del brand; se c'e' uno sfondo animato QDI (punti interrogativi)
@@ -195,10 +222,13 @@ class Factory:
         bip = {"domanda": 700, "tick": 880, "giusta": 1180, "livello": 520}
         args, parti = [], []
         for i, (tipo, t) in enumerate(eventi):
-            f = self.sfx.get(tipo)
-            if f: args += ["-i", f]
-            else: args += ["-f", "lavfi", "-i", f"sine=frequency={bip[tipo]}:duration=0.12"]
-            vol = 0.55 if tipo == "tick" else 0.9
+            if tipo.startswith("voce:"):                     # frase della voce narrante
+                args += ["-i", tipo[5:]]; vol = 1.6
+            else:
+                f = self.sfx.get(tipo)
+                if f: args += ["-i", f]
+                else: args += ["-f", "lavfi", "-i", f"sine=frequency={bip[tipo]}:duration=0.12"]
+                vol = 0.55 if tipo == "tick" else 0.9
             ms = int(t*1000)
             parti.append(f"[{i}:a]aresample=44100,aformat=channel_layouts=stereo,"
                          f"volume={vol},adelay={ms}|{ms}[e{i}]")
@@ -212,7 +242,7 @@ class Factory:
         return out
 
     # ---------- render di uno spezzone grafico ----------
-    def render(self, name, dur, vfilters, audio=None, barra=False, logo=True, mascotte=None):
+    def render(self, name, dur, vfilters, audio=None, barra=False, logo=True, mascotte=None, livelli=()):
         out = f"{REL}/{name}"
         chain = ",".join(vfilters) if vfilters else "null"
         args = []
@@ -223,6 +253,11 @@ class Factory:
             args += ["-loop", "1", "-t", f"{dur}", "-i", self.bgpng]
         args += ["-i", audio] if audio else ["-f", "lavfi", "-i", f"anullsrc=r=44100:cl=stereo:d={dur}"]
         fc, cur, n = [f"[0:v]{chain}[v0]"], "v0", 2
+        for path, x, y, comparsa in livelli:               # grafiche PNG (badge, card)
+            args += ["-loop", "1", "-t", f"{dur}", "-i", path]
+            fade = f"format=rgba,fade=t=in:st={comparsa:.2f}:d=0.18:alpha=1," if comparsa else ""
+            fc.append(f"[{n}:v]{fade}null[g{n}];[{cur}][g{n}]overlay={x}:{y}[v{n}]")
+            cur, n = f"v{n}", n+1
         if logo and self.R["logo"]:                         # icona QDI in alto a destra
             lh, ly = self.G["logo"]
             cr = self.logo_crop
@@ -294,7 +329,9 @@ class Factory:
         vf += self.righe("isub", sub, f["opzioni"], G["sub_fs"], c["accento"], y2, slh, bordo=3)
         yl  = y2 + len(sub)*slh + int(self.H*0.03)
         vf += [f"drawbox=x=0:y={yl}:w={self.W}:h={max(6,int(self.H*0.005))}:color={c['accento']}:t=fill"]
-        a = self.suoni("a_intro", dur, [("livello", 0)])
+        v, vd = self.parla(f"Benvenuti su Quiz Divertenti Italia! {titolo} {sottotitolo}. Siete pronti? Si parte!")
+        if v: dur = max(dur, vd + 1.2)
+        a = self.suoni("a_intro", dur, [("livello", 0)] + ([("voce:" + v, 0.5)] if v else []))
         return self.render("05_titolo.mp4", dur, vf, audio=a, logo=False,
                            mascotte=(G["masc_h"], yl + int(self.H*0.04)))
 
@@ -309,42 +346,53 @@ class Factory:
             vf += self.righe(f"lvs{idx}", [parti[1].upper()], f["opzioni"], int(G["sub_fs"]*1.3),
                              c["testo"], y + int(G["tit_fs"]*1.75), 0, bordo=3)
         self.capitoli.append((self.clock, nome))
-        a = self.suoni(f"a_lv{idx}", dur, [("livello", 0)])
+        frase = {"facile": "Si comincia col riscaldamento!", "medio": "Adesso si fa sul serio!",
+                 "difficile": "Solo per veri geni!"}.get(parti[-1].lower(), "")
+        v, vd = self.parla(f"{parti[0]}! {parti[1] if len(parti) > 1 else ''}. {frase}")
+        if v: dur = max(dur, vd + 0.8)
+        a = self.suoni(f"a_lv{idx}", dur, [("livello", 0)] + ([("voce:" + v, 0.3)] if v else []))
         return self.render(f"07_lv{idx}.mp4", dur, vf, audio=a, logo=True)
 
     def domanda(self, idx, q, opzioni, dur):
         G, c, f = self.G, self.c, self.f
-        bx, by, bw, bh = G["badge"]
-        tf = txtfile(f"qn{idx}.txt", f"DOMANDA {idx+1}")
-        vf  = [f"drawbox=x={bx}:y={by}:w={bw}:h={bh}:color={c['accento']}:t=fill"]
-        vf += [f"drawtext=fontfile='{f['opzioni']}':textfile='{tf}':fontsize={G['badge_fs']}"
-               f":fontcolor={c['card_testo']}:x={bx+int(bw*0.08)}:y={by+(bh-G['badge_fs'])//2-int(bh*0.08)}"]
-        vf += self.righe(f"qt{idx}", wrap(q, G["q_wrap"]), f["domanda"],
-                         G["q_fs"], c["testo"], G["q_y"], G["q_lh"], bordo=3)
-        vf += self.opzioni(f"o{idx}", opzioni)
+        vf = self.righe(f"qt{idx}", wrap(q, G["q_wrap"]), f["domanda"],
+                        G["q_fs"], c["testo"], G["q_y"], G["q_lh"], bordo=3)
+        vf = [v + ":alpha='min(1,t/0.3)'" for v in vf]      # la domanda entra in dissolvenza
+        # le card entrano una alla volta: piu' ritmo, l'occhio segue le opzioni
+        entra = [0.35 + 0.18*i for i in range(len(opzioni))]
+        v, vd = self.parla(q)
+        if v and self.R["barra"]:          # tempo di lettura = durata della frase, niente buchi
+            dur = round(max(dur - self.barra_len, vd + 0.6) + self.barra_len, 2)
+        liv = [self.png_badge(idx + 1) + (None,)]
+        liv += [self.png_card(f"q{idx}", i, op, "neutra") + (entra[i],) for i, op in enumerate(opzioni)]
+        ev = [("domanda", 0)] + [("tick", t) for t in entra] + ([("voce:" + v, 0.25)] if v else [])
         if self.R["barra"]:
             # la barra QDI ha gia' i numeri 5-4-3-2-1: tick a ogni numero
             start = max(0.0, dur - self.barra_len)
             passo = min(1.0, dur / max(self.barra_len, 1))
-            ev = [("domanda", 0)] + [("tick", start + i*passo) for i in range(int(round(self.barra_len)))]
+            ev += [("tick", start + i*passo) for i in range(int(round(self.barra_len)))]
         else:
             n = int(dur)
             vf += [f"drawtext=fontfile='{f['titolo']}':text='%{{eif\\:max(0\\,{n}-t)\\:d}}'"
                    f":fontsize={G['cd_fs']}:fontcolor={c['countdown']}:x=(w-tw)/2:y={G['cd_y']}"]
-            ev = [("domanda", 0)] + [("tick", i) for i in range(1, n)]
+            ev += [("tick", i) for i in range(1, n)]
         a = self.suoni(f"a_q{idx}", dur, ev)
-        return self.render(f"10_q{idx:04d}.mp4", dur, vf, audio=a, barra=True)
+        return self.render(f"10_q{idx:04d}.mp4", dur, vf, audio=a, barra=True, livelli=liv)
 
     def risposta(self, idx, q, opzioni, giusta, dur, spiega=None):
         G, c, f = self.G, self.c, self.f
         vf  = self.righe(f"rt{idx}", wrap(q, G["q_wrap"]), f["domanda"],
                          int(G["q_fs"]*0.88), f"{c['testo']}@0.8", G["q_y"], G["q_lh"], bordo=3)
-        vf += self.opzioni(f"r{idx}", opzioni, giusta)
         testo = spiega or "RISPOSTA GIUSTA"
         vf += self.righe(f"rok{idx}", wrap(testo, G["q_wrap"]+8), f["titolo"],
                          G["ok_fs"], c["accento"], G["ok_y"], int(G["ok_fs"]*1.12), bordo=4)
-        a = self.suoni(f"a_r{idx}", dur, [("giusta", 0)])
-        return self.render(f"20_r{idx:04d}.mp4", dur, vf, audio=a)
+        liv = [self.png_badge(idx + 1) + (None,)]
+        liv += [self.png_card(f"r{idx}", i, op, "giusta" if i == giusta else "spenta") + (None,)
+                for i, op in enumerate(opzioni)]
+        v, vd = self.parla(f"Risposta {'ABCD'[giusta]}: {opzioni[giusta]}!")
+        if v: dur = max(dur, vd + 0.9)
+        a = self.suoni(f"a_r{idx}", dur, [("giusta", 0)] + ([("voce:" + v, 0.35)] if v else []))
+        return self.render(f"20_r{idx:04d}.mp4", dur, vf, audio=a, livelli=liv)
 
     def outro(self, cta, brand, dur):
         G, c, f = self.G, self.c, self.f
@@ -428,7 +476,8 @@ def main():
     fac = Factory(brand, a.formato, rotazione=max(rot, 0)); fac.make_bg()
     t = fac.tempi
     yt = fac.clip_brand
-    print(f"formato {a.formato} {fac.W}x{fac.H} · {len(dom)} domande · grafiche QDI: "
+    print(f"formato {a.formato} {fac.W}x{fac.H} · {len(dom)} domande · voce: "
+          f"{'SI (Gemini)' if fac.voce else 'no (manca GEMINI_API_KEY)'} · grafiche QDI: "
           + ", ".join(k for k, v in fac.R.items() if v))
 
     # dove cadono i cambi livello (indice domanda -> nome)

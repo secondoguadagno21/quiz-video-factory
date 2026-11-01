@@ -18,16 +18,24 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
 - **Logo QDI** in alto a destra su domande, risposte e cartelli livello.
 - Sfondo: sfumatura blu del brand + sfondo animato coi punti interrogativi
   (`assets/sfondi`, uno diverso a rotazione per ogni quiz).
-- Badge "DOMANDA N" giallo in alto a sinistra. Opzioni A/B/C/D in card bianche con
-  etichetta gialla; risposta giusta in verde, le altre spente in grigio.
+- Numero della domanda: **grande cerchio giallo col numero blu scuro** in alto a
+  sinistra, niente scritta "DOMANDA" (disegnato da `grafica.py`).
+- Opzioni A/B/C/D: card bianche **arrotondate** con bordo blu scuro, ombra ed etichetta
+  gialla sfumata; entrano una alla volta. Risposta giusta: card verde con alone; le
+  altre spente e trasparenti. Grafiche disegnate da `grafica.py` (Pillow), mai
+  rettangoli piatti.
+- Ritmo: niente pause vuote. Lettura 3,5 s (o la durata della voce) + barra 5 s,
+  risposta 3 s.
+- Tutto si produce qui, nel motore: niente Canva né programmi esterni.
 - Font solo statici: Anton (titoli/domande), Bebas Neue (opzioni/CTA).
 - Il formato reel (9:16) usa barra, logo, mascotte, sfondi ed effetti QDI; le clip
   intro/CTA/outro sono 16:9 e restano solo nel formato YouTube.
 - Nuove grafiche: si mettono in `assets/brand/` e si collegano in `brand.json`.
 
 ## Audio
-- **Voce narrante nei punti strategici** (intro, cambio livello, risultato finale, CTA)
-  ogni volta che un servizio di sintesi vocale è disponibile.
+- **Voce narrante** (Google AI Studio, Gemini TTS, `voce.py`): legge il titolo, annuncia
+  i livelli, legge ogni domanda e la risposta giusta. Si accende da sola se c'è
+  `GEMINI_API_KEY`; voce e stile in `brand.json` → `"voce"`.
 - Se la voce non è disponibile: **solo musica di sottofondo** + effetti QDI
   (`assets/sfx`: pop alla domanda, click a ogni numero della barra, brillio alla
   risposta giusta, whoosh sui cartelli). Mai video muti.

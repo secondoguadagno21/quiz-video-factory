@@ -6,3 +6,4 @@ __pycache__/
 out/*.jpg
 .tmp_mini/
 out/*.json
+.cache_voce/

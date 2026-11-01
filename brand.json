@@ -59,8 +59,8 @@
       "layout": "griglia",
       "tempi": {
         "intro": 5.0,
-        "domanda": 10.0,
-        "risposta": 4.0,
+        "domanda": 8.5,
+        "risposta": 3.0,
         "outro": 12.0,
         "livello": 2.5
       },
@@ -92,5 +92,12 @@
       "giusta": "assets/sfx/brillio.wav",
       "livello": "assets/sfx/whoosh-cinematico.mp3"
     }
+  },
+  "voce": {
+    "attiva": true,
+    "motore": "gemini",
+    "modello": "gemini-2.5-flash-preview-tts",
+    "voce": "Puck",
+    "stile": "Leggi in italiano, con il tono energico, caldo e simpatico di un presentatore di quiz televisivo"
   }
 }
