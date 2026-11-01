@@ -133,8 +133,23 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--da-token", help="token.json salvato dalla libreria google-auth")
     ap.add_argument("--client", help="file client_secret_....json scaricato da Google")
+    ap.add_argument("--verifica", action="store_true",
+                    help="controlla le credenziali gia' salvate e dice su che canale pubblica")
     a = ap.parse_args()
     carica_env()
+
+    if a.verifica:
+        v = {k: os.environ.get(k, "").strip() for k in ("YT_CLIENT_ID", "YT_CLIENT_SECRET", "YT_REFRESH_TOKEN")}
+        manca = [k for k, x in v.items() if not x]
+        if manca: sys.exit("NON PRONTO. Mancano: " + ", ".join(manca))
+        body = urllib.parse.urlencode(dict(client_id=v["YT_CLIENT_ID"], client_secret=v["YT_CLIENT_SECRET"],
+                                           refresh_token=v["YT_REFRESH_TOKEN"], grant_type="refresh_token")).encode()
+        try:
+            access = json.load(urllib.request.urlopen(TOKEN, body, timeout=30))["access_token"]
+        except urllib.error.HTTPError as e:
+            sys.exit("NON PRONTO. Google rifiuta le credenziali: " + e.read().decode()[:300])
+        print(f"PRONTO. Pubblico sul canale: {canale(access)}")
+        sys.exit(0)
 
     if a.da_token:
         t = json.load(open(a.da_token, encoding="utf-8"))
