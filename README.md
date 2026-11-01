@@ -95,7 +95,7 @@ da `brand.json` → `"risorse"`:
 | `assets/brand/` | intro, transizione, barra, CTA, outro, logo, mascotte | struttura del video YouTube, logo in alto a destra, barra sulle domande |
 | `assets/sfx/` | pop, click, brillio, whoosh | domanda, numeri della barra, risposta giusta, cartelli livello |
 | `assets/musica/` | 10 brani dalla Libreria audio di YouTube | sottofondo **a rotazione** (registro `musica-usata.json`) |
-| `assets/sfondi/` | 4 sfondi animati coi punti interrogativi | sfondo di domande e risposte, uno diverso per quiz |
+| `assets/sfondi/` | 4 sfondi animati coi punti interrogativi | sfondo di domande e risposte, uno diverso per quiz; il colore ruota a ogni domanda (`tinte_sfondo`) |
 
 Se un file manca, il motore usa la versione generata: un video esce sempre.
 

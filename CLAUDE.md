@@ -17,7 +17,10 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
   toglie, non si sposta, non si ricolora.
 - **Logo QDI** in alto a destra su domande, risposte e cartelli livello.
 - Sfondo: sfumatura blu del brand + sfondo animato coi punti interrogativi
-  (`assets/sfondi`, uno diverso a rotazione per ogni quiz).
+  (`assets/sfondi`, uno diverso a rotazione per ogni quiz). **Il colore dello sfondo
+  cambia a ogni domanda** (blu, viola, magenta, arancio, ottanio: `brand.json` →
+  `"tinte_sfondo"`); domanda e risposta hanno lo stesso colore. Mai il verde (è il colore
+  della risposta giusta). Card, badge, barra e logo non cambiano colore.
 - Numero della domanda: **grande cerchio giallo col numero blu scuro** in alto a
   sinistra, niente scritta "DOMANDA" (disegnato da `grafica.py`).
 - Opzioni A/B/C/D: card bianche **arrotondate** con bordo blu scuro, ombra ed etichetta
@@ -28,7 +31,8 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
   e transizioni, sempre con colori, font e grafiche QDI. Già adottato: cartello livello a
   tinta piena per difficoltà (verde Facile, viola Medio, rosso Difficile) con la parola
   enorme gialla che rimbalza, "LIVELLO N" sopra e stelle di difficoltà; card che entrano
-  con un rimbalzo; risposta giusta che pulsa e resta più grande, con coriandoli.
+  con un rimbalzo; risposta giusta che pulsa e resta più grande, con coriandoli;
+  sfondo che cambia colore a ogni domanda.
 - Ritmo: niente pause vuote. Lettura 3,5 s (o la durata della voce) + barra 5 s,
   risposta 3 s.
 - Tutto si produce qui, nel motore: niente Canva né programmi esterni.

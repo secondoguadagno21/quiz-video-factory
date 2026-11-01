@@ -18,7 +18,8 @@
     "sbagliata": "0xE0453B",
     "countdown": "0xFFD24A",
     "testo": "0xFFFFFF",
-    "barra_traccia": "0x0E2A7A"
+    "barra_traccia": "0x0E2A7A",
+    "tinte_sfondo": [0, 45, 95, 150, -35]
   },
   "font": {
     "titolo": "assets/fonts/Anton-Regular.ttf",

@@ -288,9 +288,11 @@ class Factory:
         return (f"{REL}/{tag}_%02d.png", x - dx, y - dy)
 
     def render(self, name, dur, vfilters, audio=None, barra=False, logo=True, mascotte=None, livelli=(),
-               raggi=False, sfondo=None):
+               raggi=False, sfondo=None, tinta=0):
         out = f"{REL}/{name}"
         chain = ",".join(vfilters) if vfilters else "null"
+        if tinta and not sfondo:    # solo lo sfondo cambia colore: card, logo e barra restano QDI
+            chain = f"hue=h={tinta},{chain}"
         args = []
         if sfondo:          # sfondo dedicato (cartelli livello)
             args += ["-loop", "1", "-t", f"{dur}", "-i", sfondo]
@@ -434,6 +436,12 @@ class Factory:
         return self.render(f"07_lv{idx}.mp4", dur, [], audio=a, logo=True, raggi=True,
                            sfondo=f"{REL}/{os.path.basename(sf)}", livelli=liv)
 
+    def tinta(self, idx):
+        """Lo sfondo cambia colore a ogni domanda (stile Quiz Blitz): rotazione della tinta
+        in gradi sul blu del brand. Niente verde: si confonderebbe con la risposta giusta."""
+        t = self.c.get("tinte_sfondo") or [0]
+        return t[idx % len(t)]
+
     def domanda(self, idx, q, opzioni, dur):
         G, c, f = self.G, self.c, self.f
         vf = self.righe(f"qt{idx}", wrap(q, G["q_wrap"]), f["domanda"],
@@ -462,7 +470,8 @@ class Factory:
                    f":fontsize={G['cd_fs']}:fontcolor={c['countdown']}:x=(w-tw)/2:y={G['cd_y']}"]
             ev += [("tick", i) for i in range(1, n)]
         a = self.suoni(f"a_q{idx}", dur, ev)
-        return self.render(f"10_q{idx:04d}.mp4", dur, vf, audio=a, barra=True, livelli=liv)
+        return self.render(f"10_q{idx:04d}.mp4", dur, vf, audio=a, barra=True, livelli=liv,
+                           tinta=self.tinta(idx))
 
     def risposta(self, idx, q, opzioni, giusta, dur, spiega=None):
         G, c, f = self.G, self.c, self.f
@@ -486,7 +495,8 @@ class Factory:
         v, vd = self.parla(voce.frase_risposta(opzioni, giusta))
         if v: dur = max(dur, vd + 0.9)
         a = self.suoni(f"a_r{idx}", dur, [("giusta", 0)] + ([("voce:" + v, 0.35)] if v else []))
-        return self.render(f"20_r{idx:04d}.mp4", dur, vf, audio=a, livelli=liv)
+        return self.render(f"20_r{idx:04d}.mp4", dur, vf, audio=a, livelli=liv,
+                           tinta=self.tinta(idx))
 
     def outro(self, cta, brand, dur):
         G, c, f = self.G, self.c, self.f
