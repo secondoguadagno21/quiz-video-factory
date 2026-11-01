@@ -1,0 +1,11 @@
+BRAND QUIZ DIVERTENTI ITALIA - grafiche ufficiali
+
+Metti qui i file del brand (icona/logo, transizioni, barra di caricamento,
+CTA iscriviti, outro). Il motore li usa al posto di quelli generati.
+Nomi consigliati:
+  logo.png            icona del canale (PNG con trasparenza)
+  barra.mp4 / .mov    barra di caricamento
+  transizione.mp4     transizione tra domande
+  cta-iscriviti.mp4   call to action iscriviti
+  outro.mp4           chiusura del video
+Limite GitHub: 100 MB per file.
