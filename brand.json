@@ -97,7 +97,7 @@
     "attiva": true,
     "motore": "gemini",
     "modello": "gemini-2.5-flash-preview-tts",
-    "voce": "Puck",
-    "stile": "Leggi in italiano, con il tono energico, caldo e simpatico di un presentatore di quiz televisivo"
+    "voce": "Leda",
+    "stile": "Leggi in italiano con la voce di una ragazza giovane: squillante, allegra, pimpante e dinamica, ritmo vivace da presentatrice di quiz televisivo"
   }
 }

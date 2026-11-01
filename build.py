@@ -317,7 +317,7 @@ class Factory:
         return out
 
     # ---------- spezzoni ----------
-    def intro(self, titolo, sottotitolo, dur):
+    def intro(self, titolo, sottotitolo, dur, hook=None):
         G, c, f = self.G, self.c, self.f
         y = int(self.H*0.22)
         vf  = [f"drawbox=x=0:y={y-int(self.H*0.04)}:w={self.W}:h={max(6,int(self.H*0.005))}"
@@ -329,7 +329,8 @@ class Factory:
         vf += self.righe("isub", sub, f["opzioni"], G["sub_fs"], c["accento"], y2, slh, bordo=3)
         yl  = y2 + len(sub)*slh + int(self.H*0.03)
         vf += [f"drawbox=x=0:y={yl}:w={self.W}:h={max(6,int(self.H*0.005))}:color={c['accento']}:t=fill"]
-        v, vd = self.parla(f"Benvenuti su Quiz Divertenti Italia! {titolo} {sottotitolo}. Siete pronti? Si parte!")
+        # gancio: entro pochi secondi, con le parole chiave di titolo, descrizione e tag
+        v, vd = self.parla(hook or f"{titolo} {sottotitolo}. Tieni il conto e scrivi il punteggio nei commenti. Via!")
         if v: dur = max(dur, vd + 1.2)
         a = self.suoni("a_intro", dur, [("livello", 0)] + ([("voce:" + v, 0.5)] if v else []))
         return self.render("05_titolo.mp4", dur, vf, audio=a, logo=False,
@@ -487,7 +488,8 @@ def main():
 
     t0 = time.time(); segs = []
     if yt and fac.R["intro"]: segs.append(fac.clip("00_intro.mp4", "intro"))
-    segs.append(fac.intro(data["titolo"], data.get("sottotitolo", ""), t["intro"]))
+    segs.append(fac.intro(data["titolo"], data.get("sottotitolo", ""), t["intro"],
+                          data.get("voce", {}).get("hook")))
     for i, d in enumerate(dom):
         if i == cta_dopo and yt and fac.R["cta"]:
             segs.append(fac.clip(f"06_cta{i}.mp4", "cta"))
