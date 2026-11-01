@@ -116,10 +116,17 @@ def cerca_file_client(indicato=None):
                       "  redirect_uri_mismatch, creane uno di tipo 'App desktop'.")
             print(f"Uso il file client: {p}")
             return dati["client_id"], dati["client_secret"]
-    sys.exit("Non trovo il file del client OAuth.\n"
-             "  Google Cloud Console -> API e servizi -> Credenziali -> il tuo client ->\n"
-             "  'Scarica JSON'. Lascialo in Download (lo trovo da solo) oppure:\n"
-             "  python autorizza_youtube.py --client percorso\\del\\file.json")
+    # nessun file: li chiediamo a mano (incolla con il tasto destro del mouse)
+    print("\nNon trovo il file del client: li incolli tu, uno alla volta.")
+    print("Li trovi in Google Cloud Console -> API e servizi -> Credenziali -> il client 'App desktop'.")
+    print("Per incollare nella finestra nera: tasto DESTRO del mouse, poi Invio.\n")
+    cid = input("ID client (finisce con .apps.googleusercontent.com): ").strip().strip('"')
+    secret = input("Client secret (di solito inizia con GOCSPX-): ").strip().strip('"')
+    if not cid.endswith(".apps.googleusercontent.com"):
+        sys.exit("Questo non sembra un ID client: deve finire con .apps.googleusercontent.com")
+    if len(secret) < 10:
+        sys.exit("Il secret sembra incompleto: ricopialo intero.")
+    return cid, secret
 
 
 if __name__ == "__main__":
