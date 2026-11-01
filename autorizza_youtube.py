@@ -95,9 +95,37 @@ def flusso_browser(cid, secret):
     return tok["refresh_token"], tok["access_token"]
 
 
+def cerca_file_client(indicato=None):
+    """Il file JSON scaricato da Google Cloud (client_secret_....json): lo cerca da solo
+    nella cartella del progetto, in Download e sul Desktop."""
+    import glob
+    casa = os.path.expanduser("~")
+    posti = [indicato] if indicato else [
+        p for d in (ROOT, os.path.join(casa, "Downloads"), os.path.join(casa, "Download"),
+                    os.path.join(casa, "Desktop"), casa)
+        for p in sorted(glob.glob(os.path.join(d, "client_secret*.json")), key=os.path.getmtime, reverse=True)]
+    for p in posti:
+        try:
+            j = json.load(open(p, encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        dati = j.get("installed") or j.get("web") or {}
+        if dati.get("client_id") and dati.get("client_secret"):
+            if "web" in j:
+                print("ATTENZIONE: questo client e' di tipo 'Applicazione web'. Se Google da' errore\n"
+                      "  redirect_uri_mismatch, creane uno di tipo 'App desktop'.")
+            print(f"Uso il file client: {p}")
+            return dati["client_id"], dati["client_secret"]
+    sys.exit("Non trovo il file del client OAuth.\n"
+             "  Google Cloud Console -> API e servizi -> Credenziali -> il tuo client ->\n"
+             "  'Scarica JSON'. Lascialo in Download (lo trovo da solo) oppure:\n"
+             "  python autorizza_youtube.py --client percorso\\del\\file.json")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--da-token", help="token.json salvato dalla libreria google-auth")
+    ap.add_argument("--client", help="file client_secret_....json scaricato da Google")
     a = ap.parse_args()
     carica_env()
 
@@ -115,10 +143,8 @@ if __name__ == "__main__":
     else:
         cid    = os.environ.get("YT_CLIENT_ID", "").strip()
         secret = os.environ.get("YT_CLIENT_SECRET", "").strip()
-        if not (cid and secret):
-            sys.exit("Mancano YT_CLIENT_ID e YT_CLIENT_SECRET nel file .env.\n"
-                     "  Google Cloud Console -> API e servizi -> Credenziali ->\n"
-                     "  Crea credenziali -> ID client OAuth -> tipo 'App desktop'.")
+        if not (cid and secret) or "incolla" in cid:
+            cid, secret = cerca_file_client(a.client)
         refresh, access = flusso_browser(cid, secret)
 
     salva_env({"YT_CLIENT_ID": cid, "YT_CLIENT_SECRET": secret, "YT_REFRESH_TOKEN": refresh})
