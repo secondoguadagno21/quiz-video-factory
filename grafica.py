@@ -91,7 +91,7 @@ def sequenza_scala(png, scale, out_pattern):
 
 # curve dei rimbalzi, un valore per fotogramma a 30 fps
 POP   = [0.35, 0.62, 0.86, 1.04, 1.12, 1.10, 1.04, 0.99, 0.98, 1.0]
-PULSA = [1.0, 1.05, 1.10, 1.13, 1.12, 1.08, 1.03, 0.99, 0.98, 1.0, 1.02, 1.03, 1.02, 1.0]
+PULSA = [1.0, 1.05, 1.10, 1.13, 1.12, 1.09, 1.06, 1.04, 1.03, 1.04, 1.05, 1.05, 1.04, 1.04]  # resta al 104%
 
 
 def coriandoli(w, h, colori, n, out_pattern, seme=7):
@@ -131,6 +131,66 @@ def raggi(d, colore, out, n=18):
         ImageDraw.Draw(m).ellipse([cx - r, cy - r, cx + r, cy + r], fill=int(255 * (1 - r / (d / 2)) ** 0.6))
     img.putalpha(Image.composite(img.split()[3], Image.new("L", (d, d), 0), m))
     img.filter(ImageFilter.GaussianBlur(3)).save(out)
+    return out
+
+
+def sfondo_livello(w, h, c1, c2, path_font, out):
+    """Tinta piena del livello, piu' chiara al centro, con i punti interrogativi QDI in filigrana."""
+    import math
+    img = Image.new("RGBA", (w, h))
+    px = img.load()
+    cx, cy, rmax = w / 2, h * 0.45, math.hypot(w / 2, h / 2)
+    for y in range(0, h, 2):                    # radiale calcolata a passo 2: basta e va veloce
+        for x in range(0, w, 2):
+            t = min(1, math.hypot(x - cx, y - cy) / rmax)
+            col = tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(3)) + (255,)
+            px[x, y] = col
+            if x + 1 < w: px[x + 1, y] = col
+            if y + 1 < h:
+                px[x, y + 1] = col
+                if x + 1 < w: px[x + 1, y + 1] = col
+    f = font(path_font, int(h * 0.16))
+    def filigrana(dr):
+        passo = int(h * 0.22)
+        for j, y in enumerate(range(-passo // 2, h + passo, passo)):
+            for x in range(-passo + (j % 2) * passo // 2, w + passo, passo):
+                dr.text((x, y), "?", font=f, fill=(255, 255, 255, 22), anchor="mm")
+    livello_sopra(img, filigrana)
+    img.convert("RGB").save(out)
+    return out
+
+
+def scritta(testo, path_font, size, colore, bordo_col, bordo, out):
+    """Testo grande con bordo spesso e ombra morbida, su sfondo trasparente."""
+    f = font(path_font, size)
+    l, t, r, b = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), testo, font=f, stroke_width=bordo)
+    pad = bordo * 3
+    img = Image.new("RGBA", (r - l + pad * 2, b - t + pad * 2), (0, 0, 0, 0))
+    ImageDraw.Draw(img).text((pad - l, pad - t), testo, font=f, fill=colore,
+                             stroke_width=bordo, stroke_fill=bordo_col)
+    ombra(img, bordo, bordo, 140).save(out)
+    return out
+
+
+def stella(d, piena, c, out):
+    """Stella di difficolta': gialla piena oppure vuota (solo contorno chiaro)."""
+    import math
+    img = Image.new("RGBA", (d, d), (0, 0, 0, 0))
+    pts = []
+    for i in range(10):
+        r = d * (0.47 if i % 2 == 0 else 0.20)
+        a = -math.pi / 2 + i * math.pi / 5
+        pts.append((d / 2 + r * math.cos(a), d / 2 + r * math.sin(a) + d * 0.03))
+    dr = ImageDraw.Draw(img)
+    navy = rgb(c["card_testo"])
+    if piena:
+        dr.polygon(pts, fill=rgb("FFD24A"), outline=navy, width=max(3, d // 18))
+        # riflesso sulla punta in alto
+        livello_sopra(img, lambda dd: dd.polygon([pts[9], pts[0], pts[1], (d / 2, d * 0.42)],
+                                                 fill=(255, 255, 255, 80)))
+    else:
+        dr.polygon(pts, fill=(255, 255, 255, 50), outline=(255, 255, 255, 170), width=max(3, d // 18))
+    ombra(img, d // 20, d // 25, 110).save(out)
     return out
 
 

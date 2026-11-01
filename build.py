@@ -36,6 +36,26 @@ def durata(path):
     try: return float(out.strip())
     except ValueError: return 0.0
 
+def inviluppo(dur, vol, zitto, basso, parlato, out, passo=100):
+    """Traccia di guadagno della musica (100 valori al secondo): 0 dove c'e' una clip QDI
+    con il suo audio, -65% sulle transizioni, -70% sotto la voce con rampe di 0,2 s in
+    entrata e 0,35 s in uscita."""
+    import array, wave
+    n = int(dur * passo) + 2
+    z, at, pv = [0.0] * n, [0.0] * n, [0.0] * n
+    for s, e in zitto:
+        for i in range(max(0, int(s * passo)), min(n, int(e * passo) + 1)): z[i] = 1
+    for s, e in basso:
+        for i in range(max(0, int(s * passo)), min(n, int(e * passo) + 1)): at[i] = 1
+    for s, e in parlato:
+        for i in range(max(0, int((s - 0.2) * passo)), min(n, int((e + 0.35) * passo) + 2)):
+            t = i / passo
+            pv[i] = max(pv[i], min(1, max(0, (t - s + 0.2) / 0.2)) * min(1, max(0, (e + 0.35 - t) / 0.35)))
+    g = array.array("h", (int(32767 * vol * (1 - z[i]) * (1 - 0.65 * at[i]) * (1 - 0.7 * pv[i]))
+                          for i in range(n)))
+    with wave.open(out, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(passo); w.writeframes(g.tobytes())
+
 def ha_audio(path):
     out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
                           "stream=index", "-of", "csv=p=0", path], capture_output=True, text=True, cwd=ROOT).stdout
@@ -84,6 +104,7 @@ class Factory:
         self.barra_len = durata(self.R["barra"]) if self.R["barra"] else 0
         # linea del tempo: serve per i capitoli e per abbassare la musica sulle clip
         self.clock, self.capitoli, self.silenzio, self.attenua = 0.0, [], [], []
+        self.parlato = []      # (inizio, fine) di ogni frase della voce: li' la musica scende
         self.voce = voce.attiva()
 
     def _geometria(self):
@@ -225,6 +246,8 @@ class Factory:
         for i, (tipo, t) in enumerate(eventi):
             if tipo.startswith("voce:"):                     # frase della voce narrante
                 args += ["-i", tipo[5:]]; vol = 1.6
+                # suoni() si chiama subito prima di render(): self.clock e' l'inizio dello spezzone
+                self.parlato.append((self.clock + t, self.clock + t + durata(tipo[5:])))
             else:
                 f = self.sfx.get(tipo)
                 if f: args += ["-i", f]
@@ -265,11 +288,13 @@ class Factory:
         return (f"{REL}/{tag}_%02d.png", x - dx, y - dy)
 
     def render(self, name, dur, vfilters, audio=None, barra=False, logo=True, mascotte=None, livelli=(),
-               raggi=False):
+               raggi=False, sfondo=None):
         out = f"{REL}/{name}"
         chain = ",".join(vfilters) if vfilters else "null"
         args = []
-        if self.bgvid:      # lo sfondo animato riparte da dove era arrivato: nessuno scatto
+        if sfondo:          # sfondo dedicato (cartelli livello)
+            args += ["-loop", "1", "-t", f"{dur}", "-i", sfondo]
+        elif self.bgvid:    # lo sfondo animato riparte da dove era arrivato: nessuno scatto
             args += ["-stream_loop", "-1", "-ss", f"{self.clock % self.bglen:.3f}",
                      "-t", f"{dur}", "-i", self.bgvid]
         else:
@@ -373,20 +398,41 @@ class Factory:
                            mascotte=(G["masc_h"], yl + int(self.H*0.04)))
 
     def livello(self, idx, nome, dur):
-        """Cartello di cambio livello: 'LIVELLO 2' grande + 'MEDIO' sotto."""
-        G, c, f = self.G, self.c, self.f
+        """Cartello di cambio livello, sul modello dei canali quiz piu' visti: tinta piena
+        diversa per livello, la difficolta' in una parola enorme che entra con un rimbalzo,
+        'LIVELLO N' sopra e le stelle di difficolta' che saltano dentro una alla volta."""
+        from PIL import Image
+        W, H, c, f = self.W, self.H, self.c, self.f
         parti = [p.strip() for p in nome.split(" - ", 1)]
-        y = int(self.H*0.30)
-        vf  = self.righe(f"lv{idx}", [parti[0].upper()], f["titolo"], int(G["tit_fs"]*1.5),
-                         c["accento"], y, 0, bordo=6)
-        if len(parti) > 1:
-            vf += self.righe(f"lvs{idx}", [parti[1].upper()], f["opzioni"], int(G["sub_fs"]*1.3),
-                             c["testo"], y + int(G["tit_fs"]*1.75), 0, bordo=3)
+        n = len(self.capitoli) + 1
+        diff = (parti[1] if len(parti) > 1 else parti[0]).upper()
+        tinte = {"FACILE": ("2FD27A", "0B7A3E"), "MEDIO": ("9B5CFF", "4A1FA8"),
+                 "DIFFICILE": ("FF5A4E", "9E1B1B"), "IMPOSSIBILE": ("3A3A3A", "0A0A0A")}
+        c1, c2 = tinte.get(diff, ("3D7BFF", "102A80"))
+        sf = os.path.join(TMP, f"sf_lv{idx}.png")
+        grafica.sfondo_livello(W, H, grafica.rgb(c1), grafica.rgb(c2), f["titolo"], sf)
+        navy = grafica.rgb(c["card_testo"])
+        def pos(png, cx, cy):              # posizione per centrare la grafica in (cx, cy)
+            w, h = Image.open(png).size
+            return (f"{REL}/{os.path.basename(png)}", cx - w // 2, cy - h // 2)
+        su = grafica.scritta(parti[0].upper(), f["opzioni"], int(H*0.085), (255, 255, 255, 255),
+                             navy, max(4, H // 220), os.path.join(TMP, f"lvsu{idx}.png"))
+        gr = grafica.scritta(diff, f["titolo"], int(H*0.26), grafica.rgb(c["accento"]),
+                             navy, max(8, H // 90), os.path.join(TMP, f"lvgr{idx}.png"))
+        liv = [pos(su, W // 2, int(H*0.20)) + (0.05,),
+               self.anima(pos(gr, W // 2, int(H*0.45)), grafica.POP, f"lvp{idx}") + (0.15,)]
+        d = int(H*0.12)
+        for k in range(3):                 # 1, 2 o 3 stelle piene secondo il livello
+            st = grafica.stella(d, k < n, c, os.path.join(TMP, f"st{idx}_{k}.png"))
+            p = pos(st, W // 2 + (k - 1) * int(d * 1.25), int(H*0.75))
+            liv.append(self.anima(p, grafica.POP, f"stp{idx}_{k}") + (0.55 + 0.15*k,))
         self.capitoli.append((self.clock, nome))
         v, vd = self.parla(voce.frase_livello(nome))
         if v: dur = max(dur, vd + 0.8)
-        a = self.suoni(f"a_lv{idx}", dur, [("livello", 0)] + ([("voce:" + v, 0.3)] if v else []))
-        return self.render(f"07_lv{idx}.mp4", dur, vf, audio=a, logo=True, raggi=True)
+        ev = [("livello", 0)] + [("tick", 0.55 + 0.15*k) for k in range(3)]
+        a = self.suoni(f"a_lv{idx}", dur, ev + ([("voce:" + v, 0.3)] if v else []))
+        return self.render(f"07_lv{idx}.mp4", dur, [], audio=a, logo=True, raggi=True,
+                           sfondo=f"{REL}/{os.path.basename(sf)}", livelli=liv)
 
     def domanda(self, idx, q, opzioni, dur):
         G, c, f = self.G, self.c, self.f
@@ -583,12 +629,15 @@ def main():
             brani = ["generata"]
         print(f"  musica: {', '.join(brani)}")
         vol = a.music_vol if a.music_vol is not None else brand.get("audio", {}).get("volume_musica", 0.40)
-        # musica zitta sotto le clip QDI che hanno il loro audio, piu' bassa sulle transizioni
-        z = "+".join(f"between(t,{s:.2f},{e:.2f})" for s, e in fac.silenzio) or "0"
-        at = "+".join(f"between(t,{s:.2f},{e:.2f})" for s, e in fac.attenua) or "0"
-        env = f"volume='{vol}*(1-min(1,{z}))*(1-0.65*min(1,{at}))':eval=frame"
-        ffmpeg("-i", muto, "-stream_loop", "-1", "-i", bed, "-filter_complex",
-               f"[1:a]{env},afade=t=out:st={max(0,dur-1.5):.2f}:d=1.5[m];"
+        # musica zitta sotto le clip QDI che hanno il loro audio, piu' bassa sulle transizioni,
+        # e al 30% sotto la voce. Il guadagno e' una traccia a parte: con 100 frasi
+        # l'espressione di volume diventava troppo lunga e ffmpeg la rifiutava
+        guad = f"{REL}/guadagno.wav"
+        inviluppo(dur, vol, fac.silenzio, fac.attenua, fac.parlato, os.path.join(ROOT, guad))
+        ffmpeg("-i", muto, "-stream_loop", "-1", "-i", bed, "-i", guad, "-filter_complex",
+               f"[2:a]aresample=44100,aformat=sample_fmts=fltp,pan=stereo|c0=c0|c1=c0[g];"
+               f"[1:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[b];"
+               f"[b][g]amultiply,afade=t=out:st={max(0,dur-1.5):.2f}:d=1.5[m];"
                f"[0:a]aformat=channel_layouts=stereo[v0];"
                f"[v0][m]amix=inputs=2:duration=first:normalize=0,"
                f"aformat=channel_layouts=stereo,loudnorm=I=-14:TP=-1.5:LRA=11,"
@@ -609,7 +658,10 @@ def main():
                        f"volume={-14 - lufs:.2f}dB,alimiter=limit=0.84:level=disabled",
                        "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
                        "-movflags", "+faststart", "-f", "mp4", tmp2)
-                os.replace(tmp2, out)
+                for prova in range(10):      # antivirus o lettore possono tenere il file
+                    try: os.replace(tmp2, out); break
+                    except PermissionError: time.sleep(3)
+                else: os.replace(tmp2, out)
                 print(f"  volume corretto da {lufs:.1f} a -14 LUFS")
 
     # linea del tempo per i capitoli di YouTube (letta da pubblica.py)

@@ -24,6 +24,11 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
   gialla sfumata; entrano una alla volta. Risposta giusta: card verde con alone; le
   altre spente e trasparenti. Grafiche disegnate da `grafica.py` (Pillow), mai
   rettangoli piatti.
+- **Riferimento di stile: Quiz Blitz** (youtube.com/@QuizBlitz_) per formato, animazioni
+  e transizioni, sempre con colori, font e grafiche QDI. Già adottato: cartello livello a
+  tinta piena per difficoltà (verde Facile, viola Medio, rosso Difficile) con la parola
+  enorme gialla che rimbalza, "LIVELLO N" sopra e stelle di difficoltà; card che entrano
+  con un rimbalzo; risposta giusta che pulsa e resta più grande, con coriandoli.
 - Ritmo: niente pause vuote. Lettura 3,5 s (o la durata della voce) + barra 5 s,
   risposta 3 s.
 - Tutto si produce qui, nel motore: niente Canva né programmi esterni.

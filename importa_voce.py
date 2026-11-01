@@ -20,6 +20,7 @@ import argparse, difflib, json, os, re, subprocess, sys, unicodedata
 import voce
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+VOLUME_FRASE = -17.0      # LUFS di ogni frase tagliata
 
 
 def durata(p):
@@ -160,8 +161,9 @@ if __name__ == "__main__":
                  "Controlla la tabella (o usa --forza).")
 
     os.makedirs(voce.ESTERNA, exist_ok=True)
-    # bordi ripuliti dalla mezza pausa che ogni taglio si porta dietro
-    pulisci = "silenceremove=start_periods=1:start_threshold=-42dB"
+    # bordi ripuliti dalla mezza pausa che ogni taglio si porta dietro. Soglia bassa: un
+    # "Chi" detto piano sta sui -45 dB e con -42 veniva mangiato; i clic sotto 30 ms non contano
+    pulisci = "silenceremove=start_periods=1:start_threshold=-52dB:start_duration=0.03"
     for k, r in enumerate(righe):
         out = os.path.join(voce.ESTERNA, f"{voce.firma(r)}.wav")
         # -ss/-to prima di -i: i filtri lavorano solo sul pezzo, non su tutto il file
@@ -169,5 +171,16 @@ if __name__ == "__main__":
                         "-ss", f"{confini[k]:.3f}", "-to", f"{confini[k+1]:.3f}", "-i", a.audio, "-af",
                         f"{pulisci},areverse,{pulisci},areverse,afade=t=in:d=0.02,"
                         "aresample=44100", "-ac", "2", out], check=True)
+        # stesso volume per tutte le frasi: nelle letture lunghe la voce sale e scende
+        # anche di 7 dB, e le risposte corte finivano sotto la musica
+        e = subprocess.run(["ffmpeg", "-hide_banner", "-i", out, "-af", "ebur128", "-f", "null", "-"],
+                           capture_output=True, text=True).stderr
+        lufs = re.findall(r"I:\s+(-?[\d.]+) LUFS", e)
+        if lufs:
+            gain = max(-6.0, min(6.0, VOLUME_FRASE - float(lufs[-1])))
+            tmp = out + ".tmp.wav"
+            subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", out, "-af",
+                            f"volume={gain:.2f}dB,alimiter=limit=0.89:level=disabled", tmp], check=True)
+            os.replace(tmp, out)
     print(f"FATTO: {len(righe)} frasi in {os.path.relpath(voce.ESTERNA, ROOT)}\n"
           f"  ora: python3 build.py {a.quiz} --formato youtube")
