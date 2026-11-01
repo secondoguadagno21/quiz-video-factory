@@ -164,10 +164,24 @@ Il volume predefinito è `audio.volume_musica` in `brand.json` (ora 0.40).
 normalizzano: il video non viene né abbassato né schiacciato in pubblicazione.
 Il mix è pesato sui medi, perché i telefoni i bassi non li riproducono.
 
-## Cosa manca ancora (e perché)
+## Voce narrante
 
-- **Voce narrante**: la rete di questo ambiente blocca ElevenLabs e OpenAI.
-  Si sblocca aggiungendo i domini in Network access delle impostazioni dell'ambiente.
+Voce femminile giovane e squillante (Gemini **Leda**, vedi `brand.json` → `"voce"`).
+Il piano gratuito di Gemini concede **10 richieste TTS al giorno**, e frase per frase un
+quiz da 51 domande ne chiede ~110. Per questo il video si legge in un **audio unico**:
+
+```bash
+python3 voce.py --copione quiz/x.json            # il copione: out/x-copione.txt
+python3 importa_voce.py quiz/x.json --gemini     # Gemini, una richiesta per livello
+python3 importa_voce.py quiz/x.json --audio voce.mp3 --srt voce.srt   # audio fatto altrove
+python3 build.py quiz/x.json --formato youtube
+```
+
+`importa_voce.py` taglia l'audio nelle frasi del copione (con l'SRT parola per parola,
+senza SRT sulle pause) e prima mostra la tabella dei tagli. Le frasi che mancano le
+chiede a Gemini, se c'è la chiave: così l'API serve solo per i ritocchi.
+
+## Cosa manca ancora (e perché)
 - **Filmati stock di sfondo**: Pexels e Pixabay sono bloccati dalla stessa regola.
 
 ---

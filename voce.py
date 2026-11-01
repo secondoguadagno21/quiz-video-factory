@@ -4,6 +4,10 @@ Voce narrante con Google AI Studio (Gemini TTS). Si attiva da sola se c'e' GEMIN
 (cloud: variabili dell'ambiente; PC: file .env). Senza chiave il motore lavora come prima.
 
   python3 voce.py "Benvenuti a Quiz Divertenti Italia!"     # prova: scrive out/prova-voce.wav
+  python3 voce.py --copione quiz/x.json                      # tutte le frasi: out/x-copione.txt
+
+Il video intero si puo' leggere anche in un audio unico (Gemini in poche richieste,
+oppure registrato altrove con il suo SRT): lo taglia importa_voce.py.
 
 Le frasi gia' generate restano in .cache_voce/ : rigenerare un video non le ripaga.
 """
@@ -11,6 +15,7 @@ import base64, hashlib, json, os, subprocess, sys, time, urllib.error, urllib.re
 
 ROOT  = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(ROOT, ".cache_voce")
+ESTERNA = os.path.join(CACHE, "esterna")   # frasi tagliate da un audio unico (importa_voce.py)
 API   = "https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent"
 
 
@@ -19,16 +24,42 @@ def config():
     return b.get("voce", {})
 
 
-def attiva():
+def chiave():
     try:
         from analizza_video import carica_env; carica_env()
     except Exception:
         pass
-    return bool(os.environ.get("GEMINI_API_KEY", "").strip()) and config().get("attiva", True)
+    k = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not k and sys.platform == "win32":     # setx la scrive qui: i processi gia' aperti non la vedono
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as h:
+                k = winreg.QueryValueEx(h, "GEMINI_API_KEY")[0].strip()
+            os.environ["GEMINI_API_KEY"] = k
+        except OSError:
+            pass
+    return k
+
+
+def attiva():
+    """Voce accesa se c'e' la chiave Gemini oppure un audio esterno gia' importato."""
+    esterne = os.path.isdir(ESTERNA) and any(f.endswith(".wav") for f in os.listdir(ESTERNA))
+    return (bool(chiave()) or esterne) and config().get("attiva", True)
+
+
+def firma(testo):
+    """Chiave di una frase importata: non dipende da modello, voce o stile."""
+    return hashlib.sha1(" ".join(testo.split()).encode()).hexdigest()[:16]
 
 
 def di(testo, stile=None):
-    """Restituisce il percorso (relativo a ROOT) di un wav 44,1 kHz stereo con la frase."""
+    """Restituisce il percorso (relativo a ROOT) di un wav 44,1 kHz stereo con la frase.
+    Prima cerca l'audio esterno importato (importa_voce.py), poi chiede a Gemini."""
+    est = os.path.join(ESTERNA, f"{firma(testo)}.wav")
+    if os.path.exists(est):
+        return os.path.relpath(est, ROOT).replace("\\", "/")
+    if not chiave():
+        raise SystemExit(f"Voce: manca l'audio di questa frase e non c'e' GEMINI_API_KEY:\n  {testo}")
     cfg = config()
     modello = cfg.get("modello", "gemini-2.5-flash-preview-tts")
     voce = cfg.get("voce", "Puck")
@@ -39,7 +70,21 @@ def di(testo, stile=None):
     out = os.path.join(CACHE, f"{h}.wav")
     if os.path.exists(out):
         return os.path.relpath(out, ROOT).replace("\\", "/")
+    pcm, rate = gemini(prompt, modello, voce)
+    raw = out + ".raw"
+    open(raw, "wb").write(pcm)
+    # PCM 16 bit mono -> wav 44,1 kHz stereo, silenzi in testa e in coda tagliati
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "s16le", "-ar", str(rate),
+                    "-ac", "1", "-i", raw, "-af",
+                    "silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
+                    "silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
+                    "aresample=44100", "-ac", "2", out], check=True)
+    os.remove(raw)
+    return os.path.relpath(out, ROOT).replace("\\", "/")
 
+
+def gemini(prompt, modello, voce):
+    """Una richiesta TTS: (pcm 16 bit mono, frequenza)."""
     body = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -61,6 +106,9 @@ def di(testo, stile=None):
             if e.code in (401, 403):
                 raise SystemExit("Voce: chiave rifiutata. Controlla che sia di Google AI Studio "
                                  "(aistudio.google.com -> Get API key) e copiata intera.\n  " + err)
+            if "PerDay" in err:                           # quota del giorno finita: inutile insistere
+                raise SystemExit("Voce: finite le richieste gratuite di oggi (10 al giorno). "
+                                 "Riprova domani.\n  " + err)
             if e.code == 429 or e.code >= 500:            # troppe richieste: aspetta e riprova
                 time.sleep(8 * (tent + 1)); continue
             raise SystemExit(f"Voce: Google ha rifiutato la richiesta ({e.code}): {err}")
@@ -68,21 +116,43 @@ def di(testo, stile=None):
             raise SystemExit(f"Voce: risposta inattesa da Google: {json.dumps(r)[:400]}")
     else:
         raise SystemExit("Voce: limite di richieste raggiunto, riprova tra qualche minuto.")
-
-    pcm = base64.b64decode(parte["data"])
     rate = 24000
     for pezzo in parte.get("mimeType", "").split(";"):
         if pezzo.strip().startswith("rate="): rate = int(pezzo.split("=")[1])
-    raw = out + ".raw"
-    open(raw, "wb").write(pcm)
-    # PCM 16 bit mono -> wav 44,1 kHz stereo, silenzi in testa e in coda tagliati
-    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "s16le", "-ar", str(rate),
-                    "-ac", "1", "-i", raw, "-af",
-                    "silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
-                    "silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
-                    "aresample=44100", "-ac", "2", out], check=True)
-    os.remove(raw)
-    return os.path.relpath(out, ROOT).replace("\\", "/")
+    return base64.b64decode(parte["data"]), rate
+
+
+def audio_unico(quiz, dest):
+    """Tutto il copione in poche richieste (una per livello) invece di una per frase:
+    il piano gratuito ne concede 10 al giorno. Le frasi vanno poi tagliate da importa_voce.py."""
+    cfg = config()
+    modello = cfg.get("modello", "gemini-2.5-flash-preview-tts")
+    righe, liv = copione(quiz), {frase_livello(n) for _, n in quiz.get("capitoli") or []}
+    blocchi = [[]]
+    for r in righe:
+        if r in liv and len(blocchi[-1]) > 1:      # un blocco per livello (il gancio va col primo)
+            blocchi.append([])
+        blocchi[-1].append(r)
+    if not chiave(): raise SystemExit("Manca GEMINI_API_KEY.")
+    pezzi = []
+    for i, b in enumerate(blocchi):
+        print(f"  voce: blocco {i+1}/{len(blocchi)} ({len(b)} frasi)", flush=True)
+        prompt = (f"{cfg.get('stile', '')}. Leggi le frasi seguenti una dopo l'altra, esattamente "
+                  "come sono scritte, con una pausa di un secondo e mezzo fra una frase e l'altra:\n\n"
+                  + "\n\n".join(b))
+        pcm, rate = gemini(prompt, modello, cfg.get("voce", "Leda"))
+        raw = f"{dest}.{i}.raw"; open(raw, "wb").write(pcm)
+        pezzi.append((raw, rate))
+    # i blocchi si uniscono con 1,5 s di silenzio: lo stesso segnale di taglio fra le frasi
+    ins, fc = [], ""
+    for j, (raw, rate) in enumerate(pezzi):
+        ins += ["-f", "s16le", "-ar", str(rate), "-ac", "1", "-i", raw]
+        fc += f"[{j}:a]aresample=44100,apad=pad_dur=1.5[p{j}];"
+    fc += "".join(f"[p{j}]" for j in range(len(pezzi))) + f"concat=n={len(pezzi)}:v=0:a=1[a]"
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", *ins, "-filter_complex", fc,
+                    "-map", "[a]", "-ac", "2", dest], check=True)
+    for raw, _ in pezzi: os.remove(raw)
+    return dest
 
 
 # ---------- le frasi del video: le usano sia build.py sia il copione ----------
