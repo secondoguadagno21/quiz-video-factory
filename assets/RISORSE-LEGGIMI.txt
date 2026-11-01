@@ -1,0 +1,31 @@
+FILE SCELTI PER IL MOTORE DEI QUIZ (Quiz Divertenti Italia)
+Copie: gli originali restano dove sono. Totale circa 119 MB, nessun file sopra 22 MB.
+
+brand\  grafiche ufficiali QDI (1920x1080)
+  logo.png ............ LOGO QUIZ.png (Desktop\YOUTUBE\...\01 Grafica e brand)
+  mascotte.png ........ GRAFICA QDI\mascotte_qdi.png
+  intro.mp4 ........... GRAFICA QDI\intro.mp4 (4 s)
+  intro-alternativa.mp4 CLIP PRONTE\intro.mp4 (4,5 s, muta)
+  welcome.mp4 ......... WELCOME VIDEO.mp4 (6 s, muta)
+  transizione.mp4 ..... TRANSIZIONE QDI.mp4 (1,5 s)
+  barra.mov ........... GRAFICA QDI\barraA_5.mov (5 s, con trasparenza)
+  barra-greenscreen.mp4 progress bar quiz ita.mp4 (8,5 s, fondo verde)
+  cta-iscriviti.mp4 ... GRAFICA QDI\cta.mp4 (4 s, "Ti sta piacendo?")
+  cta-iscriviti-lunga.mp4  CLIP PRONTE\cta iscriviti al canale.mp4 (14,5 s)
+  cta-iscriviti-notifiche.mp4  CTA SUBSCRIBE.mp4 (9 s)
+  outro.mp4 ........... GRAFICA QDI\outro.mp4 (15 s)
+  emoji3d\ ............ emoji 3D per le domande
+
+cta\    call to action generiche (da RISORSE COMUNI\Call to action)
+  commenta.mp4, iscriviti-sfondo-nero.mp4, iscriviti-greenscreen-1/2.mp4
+
+sfx\    effetti sonori: whoosh, marimba, bolle, countdown 12/15 s,
+        click, pop, botto, brillio (da GRAFICA QDI\suoni)
+
+musica\ 10 brani allegri/leggeri dalla Libreria audio di YouTube
+        (RISORSE COMUNI\Musica background e RACCOLTA AUDIO YOUTUBE)
+
+sfondi\ 4 sfondi animati col punto interrogativo (BACKGROUND\SFONDI PER CANVA)
+
+NON caricare mai su GitHub i file client_secret.json, token.json e
+"id client yt.txt" che stanno in C:\CLAUDE\video-quiz: contengono chiavi.
