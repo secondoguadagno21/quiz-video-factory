@@ -85,6 +85,20 @@ python3 build.py quiz/cibo.json --max 6 --out out/cibo.mp4
 | `assets/fonts/` | Anton (titoli) + Bebas Neue (opzioni). |
 | `out/` | I video finiti. |
 
+## Grafiche e audio del brand QDI
+
+Tutto in `assets/` (elenco completo in `assets/RISORSE-LEGGIMI.txt`), collegato al motore
+da `brand.json` → `"risorse"`:
+
+| Cartella | Cosa | Dove finisce nel video |
+|---|---|---|
+| `assets/brand/` | intro, transizione, barra, CTA, outro, logo, mascotte | struttura del video YouTube, logo in alto a destra, barra sulle domande |
+| `assets/sfx/` | pop, click, brillio, whoosh | domanda, numeri della barra, risposta giusta, cartelli livello |
+| `assets/musica/` | 10 brani dalla Libreria audio di YouTube | sottofondo **a rotazione** (registro `musica-usata.json`) |
+| `assets/sfondi/` | 4 sfondi animati coi punti interrogativi | sfondo di domande e risposte, uno diverso per quiz |
+
+Se un file manca, il motore usa la versione generata: un video esce sempre.
+
 ## Formato di una banca domande
 
 ```json

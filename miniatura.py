@@ -45,10 +45,20 @@ def main(quiz_path, out=None):
         vf += [f"drawbox=x={x}:y=600:w=220:h=80:color={col}:t=fill",
                f"drawtext=fontfile='{f['opzioni']}':textfile='{t(f'l{L}.txt', L)}':fontsize=66"
                f":fontcolor={c['card_testo']}:x={x}+(220-tw)/2:y=600+(80-th)/2"]
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
-                        f"gradients=s={W}x{H}:c0={c['sfondo_top']}:c1={c['sfondo_bottom']}"
-                        f":x0=0:y0=0:x1=0:y1={H}:d=1", "-frames:v", "1",
-                        "-vf", ",".join(vf), "-q:v", "3", out], capture_output=True, text=True, cwd=ROOT)
+    R = b.get("risorse", {})
+    logo = R.get("logo") if R.get("logo") and os.path.exists(os.path.join(ROOT, R["logo"])) else None
+    ing = ["-f", "lavfi", "-i", f"gradients=s={W}x{H}:c0={c['sfondo_top']}:c1={c['sfondo_bottom']}"
+                                f":x0=0:y0=0:x1=0:y1={H}:d=1"]
+    if logo:                       # logo QDI in alto a destra, accanto al badge
+        cr = R.get("logo_ritaglio")
+        crop = f"crop={cr[0]}:{cr[1]}:{cr[2]}:{cr[3]}," if cr else ""
+        ing += ["-i", logo]
+        fc = ["-filter_complex", f"[0:v]{','.join(vf)}[b];[1:v]{crop}scale=-1:190[l];"
+                                 f"[b][l]overlay=W-w-40:12"]
+    else:
+        fc = ["-vf", ",".join(vf)]
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", *ing, *fc,
+                        "-frames:v", "1", "-q:v", "3", out], capture_output=True, text=True, cwd=ROOT)
     shutil.rmtree(TMP, ignore_errors=True)
     if r.returncode: sys.exit("ffmpeg: " + r.stderr[-1500:])
     print(f"Miniatura: {out}")

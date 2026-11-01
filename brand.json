@@ -1,5 +1,5 @@
 {
-  "brand": "Etna Wellness",
+  "brand": "Quiz Divertenti Italia",
   "canale": "Quiz Divertenti Italia",
   "video": {
     "w": 1080,
@@ -9,8 +9,8 @@
     "preset": "veryfast"
   },
   "colori": {
-    "sfondo_top": "0x0B1437",
-    "sfondo_bottom": "0x1B2A6B",
+    "sfondo_top": "0x2F6FE4",
+    "sfondo_bottom": "0x123A9E",
     "accento": "0xFFD24A",
     "card": "0xFFFFFF",
     "card_testo": "0x0B1437",
@@ -18,7 +18,7 @@
     "sbagliata": "0xE0453B",
     "countdown": "0xFFD24A",
     "testo": "0xFFFFFF",
-    "barra_traccia": "0x2A3A80"
+    "barra_traccia": "0x0E2A7A"
   },
   "font": {
     "titolo": "assets/fonts/Anton-Regular.ttf",
@@ -47,8 +47,10 @@
         "intro": 2.0,
         "domanda": 5.0,
         "risposta": 2.2,
-        "outro": 3.0
-      }
+        "outro": 3.0,
+        "livello": 2.0
+      },
+      "clip_brand": false
     },
     "youtube": {
       "w": 1920,
@@ -56,12 +58,39 @@
       "fps": 30,
       "layout": "griglia",
       "tempi": {
-        "intro": 6.0,
+        "intro": 5.0,
         "domanda": 10.0,
         "risposta": 4.0,
-        "outro": 12.0
-      }
+        "outro": 12.0,
+        "livello": 2.5
+      },
+      "clip_brand": true
     }
   },
-  "descrizione_footer": "📢 Se ti diverti con questi quiz, lascia un like 👍, iscriviti e attiva la campanella 🔔 per non perderti i prossimi video!"
+  "descrizione_footer": "📢 Se ti diverti con questi quiz, lascia un like 👍, iscriviti e attiva la campanella 🔔 per non perderti i prossimi video!",
+  "handle": "@quizdivertentiita",
+  "risorse": {
+    "_nota": "Grafiche ufficiali QDI. Se un file manca, il motore usa la versione generata.",
+    "intro": "assets/brand/intro.mp4",
+    "transizione": "assets/brand/transizione.mp4",
+    "cta": "assets/brand/cta-iscriviti.mp4",
+    "outro": "assets/brand/outro.mp4",
+    "barra": "assets/brand/barra.mov",
+    "logo": "assets/brand/logo.png",
+    "logo_ritaglio": [
+      540,
+      600,
+      415,
+      48
+    ],
+    "mascotte": "assets/brand/mascotte.png",
+    "sfondi": "assets/sfondi",
+    "musica": "assets/musica",
+    "sfx": {
+      "domanda": "assets/sfx/pop.wav",
+      "tick": "assets/sfx/click.wav",
+      "giusta": "assets/sfx/brillio.wav",
+      "livello": "assets/sfx/whoosh-cinematico.mp3"
+    }
+  }
 }

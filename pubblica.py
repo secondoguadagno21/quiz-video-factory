@@ -25,8 +25,13 @@ def mmss(s):
     s = int(s); return f"{s//3600}:{s%3600//60:02d}:{s%60:02d}" if s >= 3600 else f"{s//60}:{s%60:02d}"
 
 
-def capitoli(quiz, brand, formato="youtube"):
-    """Calcola i minutaggi dai tempi di brand.json. YouTube vuole il primo a 0:00."""
+def capitoli(quiz, brand, formato="youtube", timeline=None):
+    """Minutaggi veri dal file .json che build.py scrive accanto al video (con intro,
+    transizioni e CTA). Se manca, li stima dai tempi di brand.json."""
+    if timeline and os.path.exists(timeline):
+        caps = json.load(open(timeline, encoding="utf-8")).get("capitoli", [])
+        if len(caps) >= 3:
+            return "\n".join(f"{mmss(t)} {n}" for t, n in caps)
     cap = quiz.get("capitoli") or []
     if len(cap) < 2: return ""
     t = brand["formati"][formato]["tempi"]
@@ -40,12 +45,12 @@ def capitoli(quiz, brand, formato="youtube"):
     return "\n".join(righe)
 
 
-def metadati(quiz, brand):
+def metadati(quiz, brand, timeline=None):
     yt = quiz.get("youtube", {})
     titolo = (yt.get("titolo") or quiz["titolo"]).strip()
     if len(titolo) > 100: sys.exit(f"Titolo troppo lungo ({len(titolo)}/100): {titolo}")
     parti = [yt.get("descrizione", "").strip()]
-    cap = capitoli(quiz, brand)
+    cap = capitoli(quiz, brand, timeline=timeline)
     if cap: parti.append(cap)
     if brand.get("descrizione_footer"): parti.append(brand["descrizione_footer"].strip())
     if brand.get("hashtag"): parti.append(brand["hashtag"])
@@ -198,7 +203,7 @@ def main(argv=None):
     img   = a.miniatura or os.path.join(ROOT, "out", f"{base}-miniatura.jpg")
     if not os.path.exists(video): sys.exit(f"Video non trovato: {video}\n  Prima: python3 build.py {a.quiz} --formato youtube")
 
-    meta = metadati(quiz, brand)
+    meta = metadati(quiz, brand, timeline=os.path.splitext(video)[0] + ".json")
     status = {"privacyStatus": "public" if a.pubblico else "unlisted" if a.non_in_elenco else "private",
               "selfDeclaredMadeForKids": False, "containsSyntheticMedia": False, "embeddable": True}
     if a.programma: status["publishAt"] = ora_utc(a.programma)
