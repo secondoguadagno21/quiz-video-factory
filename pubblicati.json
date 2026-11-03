@@ -7,5 +7,29 @@
     "uscita": "public",
     "quando": "2026-11-01",
     "pubblicato": "2026-11-02"
+  },
+  {
+    "quiz": "cultura-generale-genio-short1.json",
+    "id": "uLNlyKtI90U",
+    "url": "https://youtu.be/uLNlyKtI90U",
+    "titolo": "Il 90% sbaglia queste 5 domande! 😱 Tu ci riesci? #quiz #culturagenerale #shorts",
+    "uscita": "public",
+    "quando": "2026-11-03"
+  },
+  {
+    "quiz": "cultura-generale-genio-short2.json",
+    "id": "H6qrYWLWR24",
+    "url": "https://youtu.be/H6qrYWLWR24",
+    "titolo": "Ti sfido: indovina queste 5 domande! 🧠 Quiz di cultura generale #quiz #shorts",
+    "uscita": "public",
+    "quando": "2026-11-03"
+  },
+  {
+    "quiz": "cultura-generale-genio-short3.json",
+    "id": "pcazsvfDttM",
+    "url": "https://youtu.be/pcazsvfDttM",
+    "titolo": "5 su 5? Allora sei un genio! 🤓 Quiz di cultura generale difficile #quiz #shorts",
+    "uscita": "public",
+    "quando": "2026-11-03"
   }
 ]
