@@ -76,6 +76,11 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
   "5 su 5? Sei un genio") e **finale che rimanda al video completo**: cartello "Prova il
   quiz completo" con la miniatura del lungo e la freccia verso il link. Mai finire sull'ultima
   domanda.
+- **Pubblico 50-60+ anni: testi grandi** (domande, opzioni, titoli e intro; misure del reel in
+  `build.py` → `_geometria`). Niente testi importanti nel 20% in basso, coperto dai testi di Shorts.
+- Prima scena: **faccina 3D da social** per una risata (`emoji_intro` da `assets/brand/emoji3d`,
+  Fluent Emoji di Microsoft, licenza MIT) con scritta a fumetto (`emoji_testo`: "AAAAH!",
+  "MMM...", "MI SENTO STUPIDO!").
 - Voce: `"solo_registrate": true` (una frase non registrata resta muta, mai un'altra voce).
   Frasi nuove: `python voce.py --copione quiz/shorts/*.json --mancanti` → audio di Kira →
   `python importa_voce.py quiz/shorts/*.json --mancanti --audio v.wav --trascrivi`.

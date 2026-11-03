@@ -129,20 +129,22 @@ class Factory:
                 logo=(int(H*0.15), int(H*0.025)), masc_h=int(H*0.26),
                 badge_d=int(H*0.13), badge_xy=(int(W*0.025), int(H*0.03)),
             )
-        cw, ch = W - int(W*0.13), int(H*0.068)       # 9:16 reel, opzioni in colonna
+        # 9:16 reel, opzioni in colonna. Testi grandi: il pubblico ha 50-60 anni e guarda dal
+        # telefono. La spiegazione sta sopra la zona in basso coperta dai testi di Shorts
+        cw, ch = W - int(W*0.10), int(H*0.078)
         bw = int(W*0.93)
         return dict(
             badge=(int(W*0.055), int(H*0.104), int(W*0.333), int(H*0.047)),
-            badge_fs=int(H*0.032), q_y=int(H*0.198), q_fs=int(H*0.034), q_wrap=26,
-            q_lh=int(H*0.043), card=(cw, ch), gap=(0, int(H*0.013)),
-            opt_x0=int(W*0.065), opt_y0=int(H*0.396), lab_w=int(W*0.102),
-            opt_fs=int(H*0.034), lab_fs=int(H*0.040), cd_y=int(H*0.828),
-            cd_fs=int(H*0.088), ok_y=int(H*0.833), ok_fs=int(H*0.040),
-            tit_fs=int(H*0.056), sub_fs=int(H*0.043), tit_wrap=16,
+            badge_fs=int(H*0.032), q_y=int(H*0.175), q_fs=int(H*0.044), q_wrap=20,
+            q_lh=int(H*0.054), card=(cw, ch), gap=(0, int(H*0.011)),
+            opt_x0=int(W*0.05), opt_y0=int(H*0.355), lab_w=int(W*0.12),
+            opt_fs=int(H*0.046), lab_fs=int(H*0.052), cd_y=int(H*0.828),
+            cd_fs=int(H*0.088), ok_y=int(H*0.74), ok_fs=int(H*0.052), ok_wrap=22,
+            tit_fs=int(H*0.075), sub_fs=int(H*0.055), tit_wrap=14,
             barra=(int(W*0.065), int(H*0.745), cw, int(H*0.014)),
             barra_qdi=((W-bw)//2, int(H*0.725), bw),
             logo=(int(H*0.085), int(H*0.02)), masc_h=int(H*0.14),
-            badge_d=int(H*0.07), badge_xy=(int(W*0.05), int(H*0.085)),
+            badge_d=int(H*0.08), badge_xy=(int(W*0.05), int(H*0.075)),
         )
 
     # ---------- utilita' di disegno ----------
@@ -384,9 +386,34 @@ class Factory:
         return out
 
     # ---------- spezzoni ----------
-    def intro(self, titolo, sottotitolo, dur, hook):
+    def intro(self, titolo, sottotitolo, dur, hook, emoji=None, emoji_testo=None):
         G, c, f = self.G, self.c, self.f
         y = int(self.H*0.22)
+        liv = []
+        if emoji and os.path.exists(os.path.join(ROOT, emoji)):
+            # faccina 3D da social (urlo, "mmm", pagliaccio) per la risata iniziale: entra con un
+            # rimbalzo, la scritta a fumetto arriva subito dopo, storta come negli sticker
+            d = int(self.H * 0.27)
+            ep = os.path.join(TMP, "emoji.png")
+            grafica.Image.open(os.path.join(ROOT, emoji)).convert("RGBA").resize(
+                (d, d), grafica.Image.LANCZOS).save(ep)
+            ey = int(self.H * 0.075)
+            liv.append(self.anima((f"{REL}/emoji.png", (self.W - d) // 2, ey), grafica.POP, "emo") + (0.0,))
+            if emoji_testo:
+                sp = os.path.join(TMP, "emoji_t.png")
+                fs = int(G["tit_fs"] * 0.9)
+                while True:            # la scritta storta deve restare dentro lo schermo
+                    grafica.scritta(emoji_testo, f["titolo"], fs, grafica.rgb(c["accento"]),
+                                    grafica.rgb(c["card_testo"]), max(6, G["tit_fs"] // 12), sp)
+                    im = grafica.Image.open(sp).rotate(9, expand=True, resample=grafica.Image.BICUBIC)
+                    if im.width <= self.W * 0.92 or fs < 40: break
+                    fs = int(fs * 0.9)
+                im.save(sp)
+                m = int(self.W * 0.04)
+                ex = min(max(m, (self.W - im.width) // 2 + int(self.W * 0.18)), self.W - im.width - m)
+                liv.append(self.anima((f"{REL}/emoji_t.png", ex, ey + d - int(im.height * 0.55)),
+                                      grafica.POP, "emot") + (0.4,))
+            y = ey + d + int(self.H * 0.09)
         vf  = [f"drawbox=x=0:y={y-int(self.H*0.04)}:w={self.W}:h={max(6,int(self.H*0.005))}"
                f":color={c['accento']}:t=fill"]
         tit = wrap(titolo, G["tit_wrap"]); lh = int(G["tit_fs"]*1.12)
@@ -400,8 +427,8 @@ class Factory:
         v, vd = self.parla(hook)
         if v: dur = max(dur, vd + 1.2)
         a = self.suoni("a_intro", dur, [("livello", 0)] + ([("voce:" + v, 0.5)] if v else []))
-        return self.render("05_titolo.mp4", dur, vf, audio=a, logo=False, raggi=True,
-                           mascotte=(G["masc_h"], yl + int(self.H*0.04)))
+        return self.render("05_titolo.mp4", dur, vf, audio=a, logo=False, raggi=True, livelli=liv,
+                           mascotte=None if liv else (G["masc_h"], yl + int(self.H*0.04)))
 
     def livello(self, idx, nome, dur):
         """Cartello di cambio livello, sul modello dei canali quiz piu' visti: tinta piena
@@ -482,7 +509,7 @@ class Factory:
         vf  = self.righe(f"rt{idx}", wrap(q, G["q_wrap"]), f["domanda"],
                          int(G["q_fs"]*0.88), f"{c['testo']}@0.8", G["q_y"], G["q_lh"], bordo=3)
         testo = spiega or "RISPOSTA GIUSTA"
-        vf += self.righe(f"rok{idx}", wrap(testo, G["q_wrap"]+8), f["titolo"],
+        vf += self.righe(f"rok{idx}", wrap(testo, G.get("ok_wrap", G["q_wrap"]+8)), f["titolo"],
                          G["ok_fs"], c["accento"], G["ok_y"], int(G["ok_fs"]*1.12), bordo=4)
         liv = [self.png_badge(idx + 1) + (None,)]
         for i, op in enumerate(opzioni):
@@ -533,19 +560,19 @@ class Factory:
             grafica.scritta("\n".join(righe), f["titolo"], int(G["tit_fs"] * 1.1), grafica.rgb(c["accento"]),
                             grafica.rgb(c["card_testo"]), max(6, G["tit_fs"] // 12), sc)
             sw, sh = grafica.Image.open(sc).size
-        y = int(H * 0.12)
+        y = int(H * 0.09)
         liv.append(self.anima((f"{REL}/inv_titolo.png", (W - sw) // 2, y), grafica.POP, "inv_t") + (0.05,))
         y += sh + int(H * 0.03)
         if immagine and os.path.exists(os.path.join(ROOT, immagine)):
             mp = os.path.join(TMP, "inv_mini.png")
-            grafica.cornice(os.path.join(ROOT, immagine), int(W * 0.84), c, mp)
+            grafica.cornice(os.path.join(ROOT, immagine), int(W * 0.78), c, mp)
             mw, mh = grafica.Image.open(mp).size
             liv.append(self.anima((f"{REL}/inv_mini.png", (W - mw) // 2, y), grafica.POP, "inv_m") + (0.35,))
             y += mh + int(H * 0.02)
         vf = self.righe("inv_s", wrap(sotto, G["tit_wrap"] + 6), f["cta"], G["sub_fs"], c["testo"],
                         y, int(G["sub_fs"] * 1.1), bordo=3)
         y += int(G["sub_fs"] * 1.1) * len(wrap(sotto, G["tit_wrap"] + 6)) + int(H * 0.02)
-        d = int(H * 0.11)
+        d = int(H * 0.09)
         fp = os.path.join(TMP, "inv_freccia.png")
         grafica.freccia(d, c, fp)
         grafica.saltella(fp, int(dur * self.FPS) + 1, int(H * 0.025), self.FPS * 0.6,
@@ -637,7 +664,7 @@ def main():
     t0 = time.time(); segs = []
     if yt and fac.R["intro"]: segs.append(fac.clip("00_intro.mp4", "intro"))
     segs.append(fac.intro(data["titolo"], data.get("sottotitolo", ""), data.get("durata_intro", t["intro"]),
-                          voce.frase_hook(data)))
+                          voce.frase_hook(data), data.get("emoji_intro"), data.get("emoji_testo")))
     for i, d in enumerate(dom):
         if i == cta_dopo and yt and fac.R["cta"]:
             segs.append(fac.clip(f"06_cta{i}.mp4", "cta"))

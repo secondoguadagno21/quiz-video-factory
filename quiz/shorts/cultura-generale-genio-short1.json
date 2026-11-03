@@ -83,5 +83,7 @@
     ],
     "video_lungo": "https://youtu.be/Vki_iyr7INU"
   },
-  "cta_immagine": "out/cultura-generale-genio-miniatura.jpg"
+  "cta_immagine": "out/cultura-generale-genio-miniatura.jpg",
+  "emoji_intro": "assets/brand/emoji3d/1f631.png",
+  "emoji_testo": "AAAAH!"
 }
