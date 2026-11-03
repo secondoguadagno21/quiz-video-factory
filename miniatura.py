@@ -219,19 +219,26 @@ def modello_anteprima(q, out):
 FASCE = [((230, 40, 40), "white"), ((255, 214, 0), (11, 20, 55)), ((40, 175, 70), "white"),
          ((140, 60, 220), (255, 230, 60)), ((255, 120, 0), "white")]
 
-def personaggio(cartella, chiave):
-    """Un personaggio inventato da assets/personaggi (PNG con trasparenza), a rotazione."""
+def personaggio(cartella, chiave, tema=None, espressione=None):
+    """Personaggio inventato da assets/personaggi, file <tema>-<espressione>.png.
+    Prima quello del tema e dell'espressione chiesti, poi uno del tema, poi uno qualsiasi."""
     if not os.path.isdir(cartella): return None
     tutti = sorted(x for x in os.listdir(cartella) if x.lower().endswith(".png"))
     if not tutti: return None
-    return os.path.join(cartella, tutti[sum(map(ord, chiave)) % len(tutti)])
+    for filtro in ([f"{tema}-{espressione}."] if tema and espressione else []) + \
+                  ([f"{tema}-"] if tema else []) + [""]:
+        scelti = [x for x in tutti if x.startswith(filtro)]
+        if scelti:
+            return os.path.join(cartella, scelti[sum(map(ord, chiave)) % len(scelti)])
+    return None
 
 def modello_personaggio(q, out, chiave="quiz"):
     m = q.get("youtube", {}).get("miniatura", {})
     righe = m.get("righe_c") or [m.get("riga1", q["titolo"]), m.get("riga2", "")]
     img = raggiera((20, 110, 225), (40, 150, 250), (330, 380))
     # a sinistra il personaggio (o, finche' non c'e', la faccina 3D pensierosa)
-    p = personaggio(os.path.join(ROOT, "assets", "personaggi"), chiave)
+    p = personaggio(os.path.join(ROOT, "assets", "personaggi"), chiave,
+                    q.get("tema", "cultura-generale"), m.get("espressione"))
     if p:
         pers = Image.open(p).convert("RGBA")
         pers = pers.resize((int(pers.width * 700 / pers.height), 700), Image.LANCZOS)
