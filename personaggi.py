@@ -5,6 +5,8 @@ e li salva scontornati in assets/personaggi/, dove li prende il modello C di min
 
   python3 personaggi.py                 # genera tutta la lista PERSONAGGI che manca
   python3 personaggi.py nonna-stupita   # solo uno
+  python3 personaggi.py --foglio foglio.png --tema geografia
+      # foglio 2x2 di ChatGPT: lo taglia nelle 4 pose (stupita, indica, ride, pensa)
   python3 personaggi.py --importa immagine.png --tema geografia --espressione stupita
       # immagine creata da te: toglie lo sfondo e la salva come geografia-stupita.png
 
@@ -101,6 +103,23 @@ if __name__ == "__main__":
     except Exception:
         pass
     os.makedirs(DEST, exist_ok=True)
+    if "--foglio" in sys.argv:
+        import argparse
+        ap = argparse.ArgumentParser()
+        ap.add_argument("--foglio", required=True); ap.add_argument("--tema", required=True)
+        ap.add_argument("--pose", default="stupita,indica,ride,pensa")
+        a = ap.parse_args()
+        img = Image.open(a.foglio).convert("RGB")
+        w, h = img.size
+        for i, posa in enumerate(a.pose.split(",")[:4]):
+            r, c = divmod(i, 2)
+            m = max(6, w // 150)                      # salta la linea bianca di separazione
+            q = img.crop((c * w // 2 + m, r * h // 2 + m, (c + 1) * w // 2 - m, (r + 1) * h // 2 - m))
+            pz = scontorna_colore(q)
+            out = os.path.join(DEST, f"{a.tema}-{posa}.png")
+            pz.save(out); print(f"  {out} ({pz.width}x{pz.height})")
+        if h // 2 < 900: print("  Attenzione: pose piccole, in copertina perdono nitidezza.")
+        sys.exit(0)
     if "--importa" in sys.argv:
         import argparse
         ap = argparse.ArgumentParser()
