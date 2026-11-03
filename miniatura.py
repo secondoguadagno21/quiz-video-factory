@@ -265,6 +265,31 @@ def modello_personaggio(q, out, chiave="quiz"):
     return out
 
 
+# ---------- modello D: CLASSICO QDI (lo stile dei video vincenti del canale) ----------
+def modello_classico(out, alto, basso, centro, numero=None):
+    """Fascia gialla in alto (scritta nera) e in basso (scritta rossa), raggiera azzurra
+    al centro con UNA immagine forte. centro = [(percorso_png, altezza, x_centro), ...]."""
+    img = raggiera((120, 200, 245), (165, 222, 255), (640, 360), raggi=26)
+    fb = 150
+    d = ImageDraw.Draw(img)
+    for y0 in (0, H - fb):
+        d.rectangle([0, y0, W, y0 + fb], fill=(255, 226, 0, 255))
+        d.line([(0, y0 + (fb if y0 == 0 else 0)), (W, y0 + (fb if y0 == 0 else 0))], fill=NAVY, width=6)
+    for (path, h, cx) in centro:
+        im = Image.open(path).convert("RGBA")
+        im = im.resize((int(im.width * h / im.height), h), Image.LANCZOS)
+        im = con_ombra(im, 12, 8, 120)
+        img.alpha_composite(im, (int(cx - im.width / 2), int(360 - im.height / 2)))
+    if numero:
+        bollino(img, W - 120, 360, 190, numero[0], numero[1])
+    for testo, y, col, bordo in ((alto, fb / 2, (11, 20, 55), (255, 255, 255)),
+                                 (basso, H - fb / 2, (230, 30, 30), (11, 20, 55))):
+        f = grafica.adatta(d, testo, "assets/fonts/Anton-Regular.ttf", 128, W - 70)
+        d.text((W / 2, y), testo, font=f, fill=col, anchor="mm", stroke_width=6, stroke_fill=bordo)
+    img.convert("RGB").save(out, quality=93)
+    return out
+
+
 def main(quiz_path, out=None, modello="tutti"):
     q = json.load(open(quiz_path, encoding="utf-8"))
     base = os.path.join(ROOT, "out", os.path.splitext(os.path.basename(quiz_path))[0])

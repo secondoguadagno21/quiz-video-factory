@@ -23,6 +23,8 @@ TOKEN = "https://oauth2.googleapis.com/token"
 SCOPE = " ".join([
     "https://www.googleapis.com/auth/youtube.upload",     # caricare video e miniature
     "https://www.googleapis.com/auth/youtube.readonly",   # sapere su che canale siamo
+    "https://www.googleapis.com/auth/youtube.force-ssl",  # cambiare titoli, descrizioni, tag
+    "https://www.googleapis.com/auth/yt-analytics.readonly",  # clic sulle copertine, tempo di visione
 ])
 
 

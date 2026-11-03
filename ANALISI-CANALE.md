@@ -28,3 +28,18 @@ nera/rossa, raggiera azzurra al centro, una sola immagine forte (Dante, Einstein
 - 5–6 video per volta, una sola modifica principale per video (titolo O copertina), poi 14 giorni
   di attesa e misura.
 - Prima di ogni modifica si salvano titolo, descrizione, tag e copertina originali (si torna indietro).
+
+## Registro modifiche — giro del 3 novembre 2026 (da misurare il 17 novembre)
+Originali (copertine e metadati) in `riferimenti/originali-2026-11-03/`. Nuove copertine in `out/correzioni/`.
+
+| Video | Viste al 3/11 | Modifica | Stato |
+|---|---:|---|---|
+| bVar4Lvqp8k SE ARRIVI A 30/30 | 293 | copertina modello Sfida | FATTO |
+| h151qdMqzFw cultura generale ti farà impazzire | 527 | copertina classica col professore + titolo | copertina FATTA, titolo in attesa del permesso |
+| fDxenc6BG5Y grammatica 36 parole | 626 | copertina rifatta in HD | RIFIUTATA da YouTube (probabile test copertine attivo): caricarla a mano |
+| 7aJlDUGdm4A grammatica 2% | 509 | titolo | in attesa del permesso |
+| TZzPRNFwgU8 42 domande cultura generale | 710 | titolo | in attesa del permesso |
+| 5YWpZ8faWQo 50 domande animali | 212 | copertina coerente col titolo | FATTO |
+| 9j1lnmvEoek quiz multilingua | 285 | tag | in attesa del permesso |
+
+Titoli e tag: `python3 correzioni.py --applica` dopo la nuova autorizzazione (`youtube.force-ssl`).

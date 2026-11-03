@@ -161,9 +161,12 @@ def miniatura(video_id, img, token):
         urllib.request.urlopen(rq, timeout=120); return True
     except urllib.error.HTTPError as e:
         err = e.read().decode()
-        if e.code == 403:
+        if e.code == 403 and "forbidden" in err and "videoId" in err:
+            print("  miniatura NON caricata: YouTube non permette di cambiarla su questo video\n"
+                  "  (di solito c'e' un 'Test e confronto' copertine in corso). Va fatto da YouTube Studio.")
+        elif e.code == 403:
             print("  miniatura NON caricata: il canale deve essere verificato col telefono\n"
-                  "  (youtube.com/verify). Il video e' caricato lo stesso.")
+                  "  (youtube.com/verify), oppure manca il permesso. Dettaglio: " + err[:200])
         else:
             print("  miniatura NON caricata: " + err[:200])
         return False
