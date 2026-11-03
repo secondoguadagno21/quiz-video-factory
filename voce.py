@@ -52,6 +52,11 @@ def firma(testo):
     return hashlib.sha1(" ".join(testo.split()).encode()).hexdigest()[:16]
 
 
+def registrata(testo):
+    """La frase c'e' gia' nell'audio esterno importato (la voce scelta, Kira)?"""
+    return os.path.exists(os.path.join(ESTERNA, f"{firma(testo)}.wav"))
+
+
 def di(testo, stile=None):
     """Restituisce il percorso (relativo a ROOT) di un wav 44,1 kHz stereo con la frase.
     Prima cerca l'audio esterno importato (importa_voce.py), poi chiede a Gemini."""
@@ -156,8 +161,20 @@ def audio_unico(quiz, dest):
 
 
 # ---------- le frasi del video: le usano sia build.py sia il copione ----------
+def mancanti_o_tutte(files, mancanti):
+    """Frasi di uno o piu' quiz, senza doppioni; con mancanti=True solo quelle senza audio."""
+    righe = []
+    for f in files:
+        for r in copione(json.load(open(f, encoding="utf-8"))):
+            if r not in righe and not (mancanti and registrata(r)): righe.append(r)
+    return righe
+
+
+
 def frase_hook(quiz):
-    return (quiz.get("voce", {}).get("hook") or
+    v = quiz.get("voce", {})
+    if "hook" in v: return v["hook"]
+    return (v.get("hook") or
             f"{quiz['titolo']} {quiz.get('sottotitolo', '')}. Tieni il conto e scrivi il punteggio nei commenti. Via!")
 
 
@@ -166,6 +183,11 @@ def frase_livello(nome):
     frase = {"facile": "Si comincia col riscaldamento!", "medio": "Adesso si fa sul serio!",
              "difficile": "Solo per veri geni!"}.get(parti[-1].lower(), "")
     return f"{parti[0]}! {parti[1] if len(parti) > 1 else ''}. {frase}"
+
+
+def frase_cta(quiz):
+    """Frase finale degli short (rimando al video completo); None nei video lunghi."""
+    return quiz.get("voce", {}).get("cta")
 
 
 def frase_risposta(opzioni, giusta):
@@ -179,17 +201,21 @@ def copione(quiz):
     for i, d in enumerate(quiz["domande"]):
         if i in cap: righe.append(frase_livello(cap[i]))
         righe += [d["q"], frase_risposta(d["opzioni"], d["giusta"])]
-    return righe
+    if frase_cta(quiz): righe.append(frase_cta(quiz))
+    return [r for r in righe if r]
 
 
 if __name__ == "__main__":
     if sys.argv[1:2] == ["--copione"]:
-        # una frase per riga, riga vuota in mezzo: chi legge (o il TTS) fa la pausa
-        quiz = json.load(open(sys.argv[2], encoding="utf-8"))
-        base = os.path.splitext(os.path.basename(sys.argv[2]))[0]
+        # una frase per riga, riga vuota in mezzo: chi legge (o il TTS) fa la pausa.
+        # Piu' quiz insieme (es. gli short) danno un copione solo; --mancanti tiene solo
+        # le frasi non ancora registrate (negli short le domande ci sono gia')
+        mancanti = "--mancanti" in sys.argv
+        files = [f for f in sys.argv[2:] if f != "--mancanti"]
+        righe = mancanti_o_tutte(files, mancanti)
+        base = os.path.splitext(os.path.basename(files[0]))[0] + ("-mancanti" if mancanti else "")
         dest = os.path.join(ROOT, "out", f"{base}-copione.txt")
         os.makedirs(os.path.dirname(dest), exist_ok=True)
-        righe = copione(quiz)
         open(dest, "w", encoding="utf-8").write("\n\n".join(righe) + "\n")
         print(f"Copione: {dest}\n  {len(righe)} frasi, {sum(len(r) for r in righe)} caratteri")
         sys.exit(0)

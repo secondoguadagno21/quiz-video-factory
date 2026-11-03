@@ -258,6 +258,18 @@ Network access. Aggiungi i domini, lascia spuntato "Allow package managers".
 Il server Airtable non si collega (403 dal proxy). Senza, niente pesca
 automatica dei video da emulare.
 
+## Short che promuovono il video lungo
+
+```bash
+python build.py quiz/shorts/cultura-generale-genio-short1.json --formato reel --music "assets/musica/Corny Candy - The Soundlings.mp3"
+python pubblica.py quiz/shorts/cultura-generale-genio-short1.json --video out/cultura-generale-genio-short1-reel.mp4 --non-in-elenco
+```
+
+Nel JSON dello short: `cta_finale`, `cta_sotto`, `cta_immagine` (miniatura del lungo),
+`durata_intro`, `durata_cta`, `voce.hook`, `voce.cta`, `voce.solo_registrate`. Il finale
+(`invito()` in build.py) mostra "Prova il quiz completo", la miniatura e una freccia che
+rimbalza verso il video correlato. Le regole sono in CLAUDE.md.
+
 ## Pubblicazione su YouTube
 
 Catena completa in un comando:

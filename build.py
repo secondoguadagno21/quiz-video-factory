@@ -104,6 +104,7 @@ class Factory:
         self.barra_len = durata(self.R["barra"]) if self.R["barra"] else 0
         # linea del tempo: serve per i capitoli e per abbassare la musica sulle clip
         self.clock, self.capitoli, self.silenzio, self.attenua = 0.0, [], [], []
+        self.solo_registrate = False
         self.parlato = []      # (inizio, fine) di ogni frase della voce: li' la musica scende
         self.voce = voce.attiva()
 
@@ -189,7 +190,10 @@ class Factory:
 
     def parla(self, testo):
         """(percorso_wav, durata) oppure (None, 0) se la voce non e' attiva."""
-        if not self.voce: return None, 0.0
+        if not self.voce or not testo: return None, 0.0
+        # negli short la voce e' solo quella registrata (Kira): una frase che manca resta
+        # muta invece di uscire con un'altra voce da Gemini
+        if self.solo_registrate and not voce.registrata(testo): return None, 0.0
         p = voce.di(testo)
         return p, durata(p)
 
@@ -498,7 +502,7 @@ class Factory:
         return self.render(f"20_r{idx:04d}.mp4", dur, vf, audio=a, livelli=liv,
                            tinta=self.tinta(idx))
 
-    def outro(self, cta, brand, dur):
+    def outro(self, cta, brand, dur, frase=None):
         G, c, f = self.G, self.c, self.f
         y = int(self.H*0.33)
         vf  = self.righe("octa", wrap(cta, G["tit_wrap"]), f["titolo"],
@@ -507,9 +511,49 @@ class Factory:
                f":h={max(6,int(self.H*0.005))}:color={c['accento']}:t=fill"]
         vf += self.righe("obr", wrap(brand, G["tit_wrap"]+6), f["cta"],
                          G["sub_fs"], c["accento"], int(self.H*0.68), int(G["sub_fs"]*1.1), bordo=3)
-        a = self.suoni("a_outro", dur, [("livello", 0)])
+        v, vd = self.parla(frase)
+        if v: dur = max(dur, vd + 1.0)
+        a = self.suoni("a_outro", dur, [("livello", 0)] + ([("voce:" + v, 0.3)] if v else []))
         return self.render("90_outro.mp4", dur, vf, audio=a, logo=False,
                            mascotte=(G["masc_h"], int(self.H*0.10)))
+
+    def invito(self, cta, sotto, dur, frase=None, immagine=None):
+        """Fine degli short: "prova il quiz completo" con la miniatura del video lungo e una
+        freccia che rimbalza verso il link (video correlato) sotto lo short."""
+        G, c, f, W, H = self.G, self.c, self.f, self.W, self.H
+        v, vd = self.parla(frase)
+        if v: dur = max(dur, vd + 1.0)
+        liv = []
+        sc = os.path.join(TMP, "inv_titolo.png")
+        grafica.scritta(cta, f["titolo"], int(G["tit_fs"] * 1.1), grafica.rgb(c["accento"]),
+                        grafica.rgb(c["card_testo"]), max(6, G["tit_fs"] // 12), sc)
+        sw, sh = grafica.Image.open(sc).size
+        if sw > W * 0.94:          # parola troppo larga: si va a capo e si rifa'
+            righe = wrap(cta, max(8, len(cta) // 2 + 4))
+            grafica.scritta("\n".join(righe), f["titolo"], int(G["tit_fs"] * 1.1), grafica.rgb(c["accento"]),
+                            grafica.rgb(c["card_testo"]), max(6, G["tit_fs"] // 12), sc)
+            sw, sh = grafica.Image.open(sc).size
+        y = int(H * 0.12)
+        liv.append(self.anima((f"{REL}/inv_titolo.png", (W - sw) // 2, y), grafica.POP, "inv_t") + (0.05,))
+        y += sh + int(H * 0.03)
+        if immagine and os.path.exists(os.path.join(ROOT, immagine)):
+            mp = os.path.join(TMP, "inv_mini.png")
+            grafica.cornice(os.path.join(ROOT, immagine), int(W * 0.84), c, mp)
+            mw, mh = grafica.Image.open(mp).size
+            liv.append(self.anima((f"{REL}/inv_mini.png", (W - mw) // 2, y), grafica.POP, "inv_m") + (0.35,))
+            y += mh + int(H * 0.02)
+        vf = self.righe("inv_s", wrap(sotto, G["tit_wrap"] + 6), f["cta"], G["sub_fs"], c["testo"],
+                        y, int(G["sub_fs"] * 1.1), bordo=3)
+        y += int(G["sub_fs"] * 1.1) * len(wrap(sotto, G["tit_wrap"] + 6)) + int(H * 0.02)
+        d = int(H * 0.11)
+        fp = os.path.join(TMP, "inv_freccia.png")
+        grafica.freccia(d, c, fp)
+        grafica.saltella(fp, int(dur * self.FPS) + 1, int(H * 0.025), self.FPS * 0.6,
+                         os.path.join(TMP, "inv_fr_%03d.png"))
+        liv.append((f"{REL}/inv_fr_%03d.png", (W - d) // 2, y, 0.7))
+        a = self.suoni("a_invito", dur, [("livello", 0), ("giusta", 0.35)] +
+                       ([("voce:" + v, 0.3)] if v else []))
+        return self.render("90_invito.mp4", dur, vf, audio=a, livelli=liv, raggi=True)
 
 
 # ---------- musica a rotazione ----------
@@ -578,6 +622,7 @@ def main():
     rot = len(json.load(open(REG_MUSICA, encoding="utf-8"))) - 1 if os.path.exists(REG_MUSICA) else 0
 
     fac = Factory(brand, a.formato, rotazione=max(rot, 0)); fac.make_bg()
+    fac.solo_registrate = data.get("voce", {}).get("solo_registrate", False)
     t = fac.tempi
     yt = fac.clip_brand
     print(f"formato {a.formato} {fac.W}x{fac.H} · {len(dom)} domande · voce: "
@@ -591,7 +636,7 @@ def main():
 
     t0 = time.time(); segs = []
     if yt and fac.R["intro"]: segs.append(fac.clip("00_intro.mp4", "intro"))
-    segs.append(fac.intro(data["titolo"], data.get("sottotitolo", ""), t["intro"],
+    segs.append(fac.intro(data["titolo"], data.get("sottotitolo", ""), data.get("durata_intro", t["intro"]),
                           voce.frase_hook(data)))
     for i, d in enumerate(dom):
         if i == cta_dopo and yt and fac.R["cta"]:
@@ -611,6 +656,10 @@ def main():
     fine = fac.clock
     if yt and fac.R["outro"]:
         segs.append(fac.clip("90_outro.mp4", "outro"))
+    elif data.get("cta_finale"):
+        # uno short chiude col suo invito ("prova il quiz completo"), detto dalla voce
+        segs.append(fac.invito(data["cta_finale"], data.get("cta_sotto", ""), data.get("durata_cta", t["outro"]),
+                               voce.frase_cta(data), data.get("cta_immagine")))
     else:
         segs.append(fac.outro(brand["cta_finale"], brand["brand"], t["outro"]))
 
@@ -651,7 +700,7 @@ def main():
                f"[0:a]aformat=channel_layouts=stereo[v0];"
                f"[v0][m]amix=inputs=2:duration=first:normalize=0,"
                f"aformat=channel_layouts=stereo,loudnorm=I=-14:TP=-1.5:LRA=11,"
-               f"alimiter=limit=0.97[a]",
+               f"alimiter=limit=0.84:level=disabled[a]",   # dopo la AAC i picchi salgono
                "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                "-ac", "2", "-ar", "44100", "-t", f"{dur:.2f}", "-movflags", "+faststart", out)
 

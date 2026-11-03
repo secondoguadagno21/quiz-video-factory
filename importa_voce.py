@@ -8,6 +8,7 @@ quelle frasi al posto delle chiamate a Gemini (zero richieste).
   python3 importa_voce.py quiz/x.json --audio voce.wav                 # senza testo: sulle pause
   python3 importa_voce.py quiz/x.json --gemini                         # Gemini via API, 1 richiesta/livello
   ... --prova                                                          # mostra i tagli, non scrive
+  python3 importa_voce.py quiz/shorts/*.json --mancanti --audio v.wav --trascrivi  # solo le frasi nuove
 
 Il copione da leggere: python3 voce.py --copione quiz/x.json (una frase per blocco).
 --trascrivi ascolta l'audio in locale (faster-whisper, gratis) e trova l'istante di ogni
@@ -120,7 +121,9 @@ def tagli_da_testo(righe, sw, sil):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("quiz")
+    ap.add_argument("quiz", nargs="+")
+    ap.add_argument("--mancanti", action="store_true",
+                    help="l'audio contiene solo le frasi non ancora registrate (es. gancio degli short)")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--audio"); g.add_argument("--gemini", action="store_true")
     t = ap.add_mutually_exclusive_group()
@@ -130,10 +133,12 @@ if __name__ == "__main__":
     ap.add_argument("--prova", action="store_true"); ap.add_argument("--forza", action="store_true")
     a = ap.parse_args()
 
-    quiz = json.load(open(a.quiz, encoding="utf-8"))
-    righe = voce.copione(quiz)
+    righe = voce.mancanti_o_tutte(a.quiz, a.mancanti)
+    if not righe: sys.exit("Nessuna frase da importare: sono gia' tutte registrate.")
     if a.gemini:
-        base = os.path.splitext(os.path.basename(a.quiz))[0]
+        if len(a.quiz) > 1 or a.mancanti: sys.exit("--gemini vale per un quiz intero alla volta.")
+        quiz = json.load(open(a.quiz[0], encoding="utf-8"))
+        base = os.path.splitext(os.path.basename(a.quiz[0]))[0]
         a.audio = os.path.join(ROOT, "out", f"{base}-voce.wav")
         os.makedirs(os.path.dirname(a.audio), exist_ok=True)
         if os.path.exists(a.audio): print(f"  voce: riuso {a.audio}")
@@ -183,4 +188,4 @@ if __name__ == "__main__":
                             f"volume={gain:.2f}dB,alimiter=limit=0.89:level=disabled", tmp], check=True)
             os.replace(tmp, out)
     print(f"FATTO: {len(righe)} frasi in {os.path.relpath(voce.ESTERNA, ROOT)}\n"
-          f"  ora: python3 build.py {a.quiz} --formato youtube")
+          f"  ora: python3 build.py {a.quiz[0]} --formato youtube")

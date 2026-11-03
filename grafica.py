@@ -163,11 +163,13 @@ def sfondo_livello(w, h, c1, c2, path_font, out):
 def scritta(testo, path_font, size, colore, bordo_col, bordo, out):
     """Testo grande con bordo spesso e ombra morbida, su sfondo trasparente."""
     f = font(path_font, size)
-    l, t, r, b = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), testo, font=f, stroke_width=bordo)
+    l, t, r, b = ImageDraw.Draw(Image.new("RGBA", (1, 1))).textbbox((0, 0), testo, font=f, stroke_width=bordo,
+                                                                     align="center")
+    l, t, r, b = (int(v) for v in (l, t, r, b))     # col testo su piu' righe arrivano float
     pad = bordo * 3
     img = Image.new("RGBA", (r - l + pad * 2, b - t + pad * 2), (0, 0, 0, 0))
     ImageDraw.Draw(img).text((pad - l, pad - t), testo, font=f, fill=colore,
-                             stroke_width=bordo, stroke_fill=bordo_col)
+                             stroke_width=bordo, stroke_fill=bordo_col, align="center")
     ombra(img, bordo, bordo, 140).save(out)
     return out
 
@@ -228,3 +230,41 @@ def card(w, h, lettera, testo, stato, c, fonts, out):
     img = ombra(img, pad // 2, max(3, h // 20), 90) if stato == "neutra" else img
     img.save(out)
     return out, pad
+
+
+def cornice(src, w, c, out):
+    """Miniatura del video lungo in una cornice bianca arrotondata con ombra (fine degli short)."""
+    im = Image.open(src).convert("RGBA")
+    h = round(w * im.height / im.width)
+    r, b = max(12, w // 28), max(6, w // 90)
+    im = im.resize((w, h), Image.LANCZOS)
+    m = Image.new("L", (w, h), 0); ImageDraw.Draw(m).rounded_rectangle([0, 0, w - 1, h - 1], r, fill=255)
+    im.putalpha(m)
+    pad = b * 4
+    img = Image.new("RGBA", (w + 2 * b + 2 * pad, h + 2 * b + 2 * pad), (0, 0, 0, 0))
+    ImageDraw.Draw(img).rounded_rectangle([pad, pad, pad + w + 2 * b - 1, pad + h + 2 * b - 1], r + b,
+                                          fill=(255, 255, 255, 255))
+    img.alpha_composite(im, (pad + b, pad + b))
+    ombra(img, pad // 2, pad // 3, 150).save(out)
+    return out
+
+
+def freccia(d, c, out):
+    """Freccia gialla verso il basso, col bordo blu scuro: indica il link sotto lo short."""
+    img = Image.new("RGBA", (d, d), (0, 0, 0, 0))
+    s = d * 0.30
+    pts = [(d / 2 - s / 2, d * 0.06), (d / 2 + s / 2, d * 0.06), (d / 2 + s / 2, d * 0.50),
+           (d * 0.88, d * 0.50), (d / 2, d * 0.94), (d * 0.12, d * 0.50), (d / 2 - s / 2, d * 0.50)]
+    ImageDraw.Draw(img).polygon(pts, fill=rgb(c["accento"]), outline=rgb(c["card_testo"]), width=max(4, d // 22))
+    ombra(img, d // 25, d // 30, 120).save(out)
+    return out
+
+
+def saltella(png, n, ampiezza, periodo, out_pattern):
+    """n fotogrammi della grafica che rimbalza su e giu' (ampiezza in pixel, periodo in fotogrammi)."""
+    import math
+    im = Image.open(png).convert("RGBA")
+    for i in range(n):
+        f = Image.new("RGBA", (im.width, im.height + ampiezza), (0, 0, 0, 0))
+        f.alpha_composite(im, (0, round(ampiezza * abs(math.sin(math.pi * i / periodo)))))
+        f.save(out_pattern % i)

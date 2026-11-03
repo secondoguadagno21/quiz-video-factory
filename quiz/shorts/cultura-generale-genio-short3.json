@@ -1,0 +1,84 @@
+{
+  "titolo": "5 SU 5? ALLORA SEI UN GENIO!",
+  "sottotitolo": "SOLO I GENI CI RIESCONO",
+  "_nota": "Short estratto da quiz/cultura-generale-genio.json (domande [31, 21, 35, 42, 43]): rimanda al video lungo https://youtu.be/Vki_iyr7INU",
+  "voce": {
+    "hook": "Se le indovini tutte e cinque, sei un vero genio!",
+    "cta": "Ti è piaciuto? Prova il quiz completo: cinquantuno domande! Lo trovi qui sotto!",
+    "solo_registrate": true
+  },
+  "durata_intro": 2.5,
+  "cta_finale": "PROVA IL QUIZ COMPLETO!",
+  "cta_sotto": "51 DOMANDE - TOCCA IL LINK QUI SOTTO",
+  "durata_cta": 4.0,
+  "domande": [
+    {
+      "q": "Qual è il gas più abbondante nell'aria?",
+      "opzioni": [
+        "Ossigeno",
+        "Anidride carbonica",
+        "Argon",
+        "Azoto"
+      ],
+      "giusta": 3,
+      "spiegazione": "AZOTO, CIRCA IL 78%"
+    },
+    {
+      "q": "Quante ossa ha il corpo di un adulto?",
+      "opzioni": [
+        "226",
+        "186",
+        "206",
+        "306"
+      ],
+      "giusta": 2
+    },
+    {
+      "q": "Qual è la capitale della Mongolia?",
+      "opzioni": [
+        "Biškek",
+        "Ulan Bator",
+        "Astana",
+        "Tashkent"
+      ],
+      "giusta": 1
+    },
+    {
+      "q": "Quanto è veloce la luce, circa?",
+      "opzioni": [
+        "3 milioni km/s",
+        "3.000 km/s",
+        "30.000 km/s",
+        "300.000 km/s"
+      ],
+      "giusta": 3
+    },
+    {
+      "q": "In che anno cadde l'Impero romano d'Occidente?",
+      "opzioni": [
+        "395 d.C.",
+        "410 d.C.",
+        "476 d.C.",
+        "553 d.C."
+      ],
+      "giusta": 2,
+      "spiegazione": "476 D.C., CON ROMOLO AUGUSTOLO"
+    }
+  ],
+  "youtube": {
+    "titolo": "5 su 5? Allora sei un genio! 🤓 Quiz di cultura generale difficile #quiz #shorts",
+    "descrizione": "5 domande di cultura generale difficili: se le indovini tutte sei un genio! 🤓\n\n▶ Prova il quiz completo con 51 domande in 3 livelli: https://youtu.be/Vki_iyr7INU\n\nQuiz di cultura generale di Quiz Divertenti Italia: iscriviti per un quiz nuovo ogni settimana!",
+    "tag": [
+      "quiz cultura generale",
+      "quiz di cultura generale",
+      "quiz italiano",
+      "quiz",
+      "shorts",
+      "quiz shorts",
+      "domande di cultura generale",
+      "test cultura generale"
+    ],
+    "video_lungo": "https://youtu.be/Vki_iyr7INU"
+  },
+  "cta_immagine": "out/cultura-generale-genio-miniatura.jpg"
+}

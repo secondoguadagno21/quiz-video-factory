@@ -1,0 +1,87 @@
+{
+  "titolo": "IL 90% SBAGLIA QUESTE 5 DOMANDE",
+  "sottotitolo": "TU CI RIESCI?",
+  "_nota": "Short estratto da quiz/cultura-generale-genio.json (domande [19, 24, 30, 37, 47]): rimanda al video lungo https://youtu.be/Vki_iyr7INU",
+  "voce": {
+    "hook": "Il novanta per cento delle persone sbaglia queste cinque domande. Tu ci riesci?",
+    "cta": "Ti è piaciuto? Prova il quiz completo: cinquantuno domande! Lo trovi qui sotto!",
+    "solo_registrate": true
+  },
+  "durata_intro": 2.5,
+  "cta_finale": "PROVA IL QUIZ COMPLETO!",
+  "cta_sotto": "51 DOMANDE - TOCCA IL LINK QUI SOTTO",
+  "durata_cta": 4.0,
+  "domande": [
+    {
+      "q": "Qual è la capitale dell'Australia?",
+      "opzioni": [
+        "Perth",
+        "Melbourne",
+        "Canberra",
+        "Sydney"
+      ],
+      "giusta": 2,
+      "spiegazione": "CANBERRA, NON SYDNEY!"
+    },
+    {
+      "q": "Qual è la capitale della Turchia?",
+      "opzioni": [
+        "Smirne",
+        "Antalya",
+        "Istanbul",
+        "Ankara"
+      ],
+      "giusta": 3,
+      "spiegazione": "ANKARA, NON ISTANBUL!"
+    },
+    {
+      "q": "Quanti cuori ha un polpo?",
+      "opzioni": [
+        "3",
+        "8",
+        "2",
+        "1"
+      ],
+      "giusta": 0,
+      "spiegazione": "3 CUORI E SANGUE BLU"
+    },
+    {
+      "q": "Qual è il metallo che conduce meglio l'elettricità?",
+      "opzioni": [
+        "Rame",
+        "Oro",
+        "Argento",
+        "Alluminio"
+      ],
+      "giusta": 2,
+      "spiegazione": "ARGENTO, POI RAME E ORO"
+    },
+    {
+      "q": "Qual è l'unico mammifero capace di volare davvero?",
+      "opzioni": [
+        "Scoiattolo volante",
+        "Pipistrello",
+        "Colugo",
+        "Petauro"
+      ],
+      "giusta": 1,
+      "spiegazione": "GLI ALTRI PLANANO SOLTANTO"
+    }
+  ],
+  "youtube": {
+    "titolo": "Il 90% sbaglia queste 5 domande! 😱 Tu ci riesci? #quiz #culturagenerale #shorts",
+    "descrizione": "Il 90% delle persone sbaglia queste 5 domande di cultura generale. Tu quante ne hai indovinate? 🤔\n\n▶ Prova il quiz completo con 51 domande in 3 livelli: https://youtu.be/Vki_iyr7INU\n\nQuiz di cultura generale di Quiz Divertenti Italia: iscriviti per un quiz nuovo ogni settimana!",
+    "tag": [
+      "quiz cultura generale",
+      "quiz di cultura generale",
+      "quiz italiano",
+      "quiz",
+      "shorts",
+      "quiz shorts",
+      "domande di cultura generale",
+      "test cultura generale"
+    ],
+    "video_lungo": "https://youtu.be/Vki_iyr7INU"
+  },
+  "cta_immagine": "out/cultura-generale-genio-miniatura.jpg"
+}

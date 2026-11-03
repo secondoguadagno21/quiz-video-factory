@@ -1,0 +1,87 @@
+{
+  "titolo": "TI SFIDO: INDOVINALE TUTTE E 5",
+  "sottotitolo": "QUIZ DI CULTURA GENERALE",
+  "_nota": "Short estratto da quiz/cultura-generale-genio.json (domande [14, 22, 27, 34, 36]): rimanda al video lungo https://youtu.be/Vki_iyr7INU",
+  "voce": {
+    "hook": "Ti sfido! Cinque domande di cultura generale: indovinale tutte!",
+    "cta": "Ti è piaciuto? Prova il quiz completo: cinquantuno domande! Lo trovi qui sotto!",
+    "solo_registrate": true
+  },
+  "durata_intro": 2.5,
+  "cta_finale": "PROVA IL QUIZ COMPLETO!",
+  "cta_sotto": "51 DOMANDE - TOCCA IL LINK QUI SOTTO",
+  "durata_cta": 4.0,
+  "domande": [
+    {
+      "q": "Quale animale è il simbolo del WWF?",
+      "opzioni": [
+        "Tigre",
+        "Koala",
+        "Leone",
+        "Panda"
+      ],
+      "giusta": 3,
+      "spiegazione": "IL PANDA GIGANTE"
+    },
+    {
+      "q": "Chi ha scoperto la penicillina?",
+      "opzioni": [
+        "Fleming",
+        "Marie Curie",
+        "Koch",
+        "Pasteur"
+      ],
+      "giusta": 0,
+      "spiegazione": "ALEXANDER FLEMING, 1928"
+    },
+    {
+      "q": "Chi ha composto Le quattro stagioni?",
+      "opzioni": [
+        "Rossini",
+        "Vivaldi",
+        "Verdi",
+        "Puccini"
+      ],
+      "giusta": 1,
+      "spiegazione": "ANTONIO VIVALDI"
+    },
+    {
+      "q": "Quanti tasti ha un pianoforte classico?",
+      "opzioni": [
+        "72",
+        "96",
+        "88",
+        "76"
+      ],
+      "giusta": 2,
+      "spiegazione": "52 BIANCHI E 36 NERI"
+    },
+    {
+      "q": "In che anno fu fondata Roma secondo la tradizione?",
+      "opzioni": [
+        "509 a.C.",
+        "1000 a.C.",
+        "476 d.C.",
+        "753 a.C."
+      ],
+      "giusta": 3,
+      "spiegazione": "21 APRILE 753 A.C."
+    }
+  ],
+  "youtube": {
+    "titolo": "Ti sfido: indovina queste 5 domande! 🧠 Quiz di cultura generale #quiz #shorts",
+    "descrizione": "Ti sfido: 5 domande di cultura generale. Riesci a indovinarle tutte? Scrivi il tuo punteggio nei commenti! 💬\n\n▶ Prova il quiz completo con 51 domande in 3 livelli: https://youtu.be/Vki_iyr7INU\n\nQuiz di cultura generale di Quiz Divertenti Italia: iscriviti per un quiz nuovo ogni settimana!",
+    "tag": [
+      "quiz cultura generale",
+      "quiz di cultura generale",
+      "quiz italiano",
+      "quiz",
+      "shorts",
+      "quiz shorts",
+      "domande di cultura generale",
+      "test cultura generale"
+    ],
+    "video_lungo": "https://youtu.be/Vki_iyr7INU"
+  },
+  "cta_immagine": "out/cultura-generale-genio-miniatura.jpg"
+}

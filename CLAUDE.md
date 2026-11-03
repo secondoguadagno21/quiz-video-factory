@@ -68,6 +68,21 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
 - Ogni risposta va verificata: niente domande ambigue o con risposte contestabili.
 - Risposte giuste distribuite tra A, B, C, D (mai prevedibili).
 
+## Short promozionali (estratti del video lungo)
+- Ogni video lungo pubblicato ha i suoi short: `quiz/shorts/<quiz>-shortN.json`, 5 domande
+  "trappola" prese dal lungo (stesso testo e stesso ordine delle opzioni: così la voce di
+  Kira è già registrata), formato reel 9:16, circa 60 s.
+- Gancio clickbait nei primi 2 secondi (es. "Il 90% sbaglia queste 5 domande", "Ti sfido",
+  "5 su 5? Sei un genio") e **finale che rimanda al video completo**: cartello "Prova il
+  quiz completo" con la miniatura del lungo e la freccia verso il link. Mai finire sull'ultima
+  domanda.
+- Voce: `"solo_registrate": true` (una frase non registrata resta muta, mai un'altra voce).
+  Frasi nuove: `python voce.py --copione quiz/shorts/*.json --mancanti` → audio di Kira →
+  `python importa_voce.py quiz/shorts/*.json --mancanti --audio v.wav --trascrivi`.
+- Musica: `--music` con un brano preciso, così gli short non spostano la rotazione dei quiz.
+- Collegamento al lungo: link nella descrizione (automatico) + "Video correlato" impostato in
+  YouTube Studio (l'API non lo permette).
+
 ## Pubblicazione
 - Default: **non in elenco** (`--non-in-elenco`) finché Secondo non approva, oppure
   **programmato** (`--programma`). Mai `--pubblico` senza ordine esplicito.
