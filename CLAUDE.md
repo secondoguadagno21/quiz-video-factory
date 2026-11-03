@@ -42,6 +42,10 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
   "N DOMANDE", pillola di emoji. B "Anteprima": frase-sfida in alto + una domanda vera
   con le card A/B/C/D. C "Personaggio": personaggio inventato a sinistra (generato da
   `personaggi.py`, in `assets/personaggi`) + fasce colorate con scritte grandi a destra.
+  D "Classico": fasce gialle sopra/sotto e raggiera azzurra (lo stile dei video vincenti del
+  canale). E "Ritratto" (stile GK Smart Point): fondo scuro, 4 righe di testo enorme
+  multicolore a sinistra, ritratto espressivo in cornice a destra, scelto per tema da
+  `assets/personaggi/ritratti/<tema>-<posa>.png`.
   Mai solo testo su fondo piatto; mai foto di persone reali o personaggi protetti da
   copyright.
 - Font solo statici: Anton (titoli/domande), Bebas Neue (opzioni/CTA).

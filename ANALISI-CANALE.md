@@ -34,12 +34,12 @@ Originali (copertine e metadati) in `riferimenti/originali-2026-11-03/`. Nuove c
 
 | Video | Viste al 3/11 | Modifica | Stato |
 |---|---:|---|---|
-| bVar4Lvqp8k SE ARRIVI A 30/30 | 293 | copertina modello Sfida | FATTO |
-| h151qdMqzFw cultura generale ti farà impazzire | 527 | copertina classica col professore + titolo | copertina FATTA, titolo in attesa del permesso |
-| fDxenc6BG5Y grammatica 36 parole | 626 | copertina rifatta in HD | RIFIUTATA da YouTube (probabile test copertine attivo): caricarla a mano |
+| bVar4Lvqp8k SE ARRIVI A 30/30 | 293 | copertina modello E Ritratto (presentatrice che indica) | FATTO |
+| h151qdMqzFw cultura generale ti farà impazzire | 527 | copertina modello E Ritratto (scienziato stupito) + titolo | copertina FATTA, titolo in attesa del permesso |
+| fDxenc6BG5Y grammatica 36 parole | 626 | copertina modello E Ritratto (maestra), `out/correzioni/fDxenc6BG5Y-E.jpg` | RIFIUTATA da YouTube (probabile test copertine attivo): caricarla a mano |
 | 7aJlDUGdm4A grammatica 2% | 509 | titolo | in attesa del permesso |
 | TZzPRNFwgU8 42 domande cultura generale | 710 | titolo | in attesa del permesso |
-| 5YWpZ8faWQo 50 domande animali | 212 | copertina coerente col titolo | FATTO |
+| 5YWpZ8faWQo 50 domande animali | 212 | copertina modello E Ritratto (ragazzo col cane) | FATTO |
 | 9j1lnmvEoek quiz multilingua | 285 | tag | in attesa del permesso |
 
 Titoli e tag: `python3 correzioni.py --applica` dopo la nuova autorizzazione (`youtube.force-ssl`).

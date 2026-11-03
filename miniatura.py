@@ -290,6 +290,48 @@ def modello_classico(out, alto, basso, centro, numero=None):
     return out
 
 
+# ---------- modello E: RITRATTO (stile GK Smart Point, le loro copertine da 300k) ----------
+COLORI_RIGHE = [(255, 214, 0), (255, 255, 255), (60, 220, 255), (255, 214, 0), (120, 230, 60)]
+
+def ritratto_per_tema(tema, chiave="quiz"):
+    d = os.path.join(ROOT, "assets", "personaggi", "ritratti")
+    if not os.path.isdir(d): return None
+    tutti = sorted(x for x in os.listdir(d) if x.endswith(".png"))
+    scelti = [x for x in tutti if x.startswith(f"{tema}-")] or tutti
+    return os.path.join(d, scelti[sum(map(ord, chiave)) % len(scelti)]) if scelti else None
+
+def modello_ritratto(out, righe, ritratto, scuro=True):
+    """Fondo scuro, 3-5 righe di testo enorme multicolore a sinistra (numeri in rosso),
+    volto espressivo a destra in una cornice bianca leggermente ruotata."""
+    if scuro:
+        img = raggiera((10, 16, 40), (18, 30, 70), (900, 360), raggi=18)
+    else:
+        img = raggiera((20, 110, 225), (40, 150, 250), (900, 360))
+    # ritratto a destra
+    r = Image.open(ritratto).convert("RGBA")
+    h = 600; r = r.resize((int(r.width * h / r.height), h), Image.LANCZOS)
+    m = Image.new("L", r.size, 0); ImageDraw.Draw(m).rounded_rectangle([0, 0, r.width - 1, h - 1], 30, fill=255)
+    r.putalpha(m)
+    cornice = Image.new("RGBA", (r.width + 24, h + 24), (0, 0, 0, 0))
+    ImageDraw.Draw(cornice).rounded_rectangle([0, 0, r.width + 23, h + 23], 40, fill=(255, 255, 255, 255))
+    cornice.alpha_composite(r, (12, 12))
+    cornice = con_ombra(cornice.rotate(-3, expand=True, resample=Image.BICUBIC), 14, 10, 160)
+    img.alpha_composite(cornice, (W - cornice.width + 10, (H - cornice.height) // 2 + 6))
+    # testo a sinistra, ogni riga il suo colore; le parole con numeri in rosso
+    larg = W - cornice.width - 30
+    n = len(righe); size = min(145, int((H - 130) / n / 1.02))
+    y = 95 + (H - 115 - n * size * 1.02) / 2 - size * 0.12      # sotto la bandierina
+    for i, riga in enumerate(righe):
+        col = COLORI_RIGHE[i % len(COLORI_RIGHE)]
+        parti = [(p, ROSSO if re.search(r"\d", p) else (col, tuple(max(0, c - 40) for c in col))) for p in riga.split()]
+        lay_x = 30 + larg / 2
+        testo3d(img, lay_x, y, parti, size, "assets/fonts/Anton-Regular.ttf", larg)
+        y += size * 1.02
+    bandiera(img, 14, 10, w=120)
+    img.convert("RGB").save(out, quality=93)
+    return out
+
+
 def main(quiz_path, out=None, modello="tutti"):
     q = json.load(open(quiz_path, encoding="utf-8"))
     base = os.path.join(ROOT, "out", os.path.splitext(os.path.basename(quiz_path))[0])
