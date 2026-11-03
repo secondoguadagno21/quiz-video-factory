@@ -1,69 +1,236 @@
 #!/usr/bin/env python3
 """
-Miniatura YouTube 1280x720 coi colori del brand.
-I testi vengono da quiz["youtube"]["miniatura"]: riga1, riga2, badge.
+Copertine YouTube 1280x720 nello stile che funziona (vedi ANALISI-COPERTINE.md).
 
-  python3 miniatura.py quiz/cultura-generale-genio.json
+  python3 miniatura.py quiz/cultura-generale-genio.json                 # tutti e due i modelli
+  python3 miniatura.py quiz/cultura-generale-genio.json --modello sfida
+
+Modello A "sfida"      -> out/<quiz>-miniatura.jpg    (quella che usa pubblica.py)
+Modello B "anteprima"  -> out/<quiz>-miniatura-b.jpg  (da provare col test copertine di YouTube)
+
+Testi da quiz["youtube"]["miniatura"]: riga1, riga2, badge, e per il modello B
+"sfida_b" (frase in alto) e "domanda" (indice della domanda da mostrare).
 """
-import json, os, subprocess, sys, shutil
+import argparse, json, math, os, re, sys
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-TMP, REL = os.path.join(ROOT, ".tmp_mini"), ".tmp_mini"     # separata da .tmp di build.py
+W, H = 1280, 720
+EMOJI = os.path.join(ROOT, "assets", "brand", "emoji3d")
+sys.path.insert(0, ROOT)
+import grafica
 
-def main(quiz_path, out=None):
-    b = json.load(open(os.path.join(ROOT, "brand.json"), encoding="utf-8"))
-    q = json.load(open(quiz_path, encoding="utf-8"))
-    m = q.get("youtube", {}).get("miniatura") or {}
-    r1, r2 = m.get("riga1", q["titolo"]), m.get("riga2", "")
-    badge = m.get("badge", q.get("sottotitolo", ""))
-    c, f = b["colori"], {k: v.replace("\\", "/") for k, v in b["font"].items()}
-    W, H = 1280, 720
-    out = out or os.path.join(ROOT, "out",
-                              os.path.splitext(os.path.basename(quiz_path))[0] + "-miniatura.jpg")
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    shutil.rmtree(TMP, ignore_errors=True); os.makedirs(TMP)
+NAVY = (11, 20, 55, 255)
+GIALLO = ((255, 236, 92), (255, 168, 0))
+BIANCO = ((255, 255, 255), (214, 228, 255))
+ROSSO = ((255, 92, 80), (214, 24, 24))
 
-    def t(nome, testo):
-        open(os.path.join(TMP, nome), "w", encoding="utf-8").write(testo); return f"{REL}/{nome}"
 
-    vf = [
-        # fascia accento in alto con badge
-        f"drawbox=x=0:y=0:w={W}:h=16:color={c['accento']}:t=fill",
-        f"drawbox=x=60:y=60:w=420:h=92:color={c['sbagliata']}:t=fill",
-        f"drawtext=fontfile='{f['opzioni']}':textfile='{t('b.txt', badge)}':fontsize=70"
-        f":fontcolor=white:x=60+(420-tw)/2:y=60+(92-th)/2",
-        # due righe enormi, la seconda in giallo
-        f"drawtext=fontfile='{f['titolo']}':textfile='{t('r1.txt', r1)}':fontsize=150"
-        f":fontcolor={c['testo']}:borderw=6:bordercolor=black@0.55:x=(w-tw)/2:y=215",
-        f"drawtext=fontfile='{f['titolo']}':textfile='{t('r2.txt', r2)}':fontsize=150"
-        f":fontcolor={c['accento']}:borderw=6:bordercolor=black@0.55:x=(w-tw)/2:y=405",
-        # quattro tessere A B C D in basso: si capisce subito che e' un quiz
-    ]
-    for i, L in enumerate("ABCD"):
-        x = 140 + i*265
-        col = c["giusta"] if i == 2 else c["card"]
-        vf += [f"drawbox=x={x}:y=600:w=220:h=80:color={col}:t=fill",
-               f"drawtext=fontfile='{f['opzioni']}':textfile='{t(f'l{L}.txt', L)}':fontsize=66"
-               f":fontcolor={c['card_testo']}:x={x}+(220-tw)/2:y=600+(80-th)/2"]
-    R = b.get("risorse", {})
-    logo = R.get("logo") if R.get("logo") and os.path.exists(os.path.join(ROOT, R["logo"])) else None
-    ing = ["-f", "lavfi", "-i", f"gradients=s={W}x{H}:c0={c['sfondo_top']}:c1={c['sfondo_bottom']}"
-                                f":x0=0:y0=0:x1=0:y1={H}:d=1"]
-    if logo:                       # logo QDI in alto a destra, accanto al badge
-        cr = R.get("logo_ritaglio")
-        crop = f"crop={cr[0]}:{cr[1]}:{cr[2]}:{cr[3]}," if cr else ""
-        ing += ["-i", logo]
-        fc = ["-filter_complex", f"[0:v]{','.join(vf)}[b];[1:v]{crop}scale=-1:190[l];"
-                                 f"[b][l]overlay=W-w-40:12"]
-    else:
-        fc = ["-vf", ",".join(vf)]
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", *ing, *fc,
-                        "-frames:v", "1", "-q:v", "3", out], capture_output=True, text=True, cwd=ROOT)
-    shutil.rmtree(TMP, ignore_errors=True)
-    if r.returncode: sys.exit("ffmpeg: " + r.stderr[-1500:])
-    print(f"Miniatura: {out}")
+def fnt(path, size): return ImageFont.truetype(os.path.join(ROOT, path), size)
+
+def emoji(code, size):
+    return Image.open(os.path.join(EMOJI, f"{code}.png")).convert("RGBA").resize((size, size), Image.LANCZOS)
+
+def con_ombra(img, raggio=10, spost=8, opacita=150):
+    a = img.split()[3].point(lambda p: opacita if p > 100 else 0)
+    sh = Image.new("RGBA", img.size, (0, 0, 0, 0)); sh.putalpha(a)
+    sh = sh.filter(ImageFilter.GaussianBlur(raggio))
+    out = Image.new("RGBA", (img.width + spost * 2, img.height + spost * 2), (0, 0, 0, 0))
+    out.alpha_composite(sh, (spost * 2, spost * 2)); out.alpha_composite(img, (0, 0))
     return out
 
+
+def raggiera(c1, c2, centro, raggi=22):
+    """Sfondo a raggi di sole, con vignetta scura ai bordi."""
+    img = Image.new("RGBA", (W, H), c1 + (255,))
+    d = ImageDraw.Draw(img)
+    cx, cy = centro; R = 2000
+    for i in range(raggi):
+        a0 = 2 * math.pi * i / raggi; a1 = a0 + math.pi / raggi
+        d.polygon([(cx, cy), (cx + R * math.cos(a0), cy + R * math.sin(a0)),
+                   (cx + R * math.cos(a1), cy + R * math.sin(a1))], fill=c2 + (255,))
+    luce = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(luce).ellipse([cx - 420, cy - 300, cx + 420, cy + 300], fill=120)
+    img.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, 255)),
+                        (0, 0)) if False else None
+    bianco = Image.new("RGBA", (W, H), (255, 255, 255, 0)); bianco.putalpha(luce.filter(ImageFilter.GaussianBlur(120)))
+    img.alpha_composite(bianco)
+    vig = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(vig).rectangle([0, 0, W, H], fill=150)
+    ImageDraw.Draw(vig).ellipse([-200, -160, W + 200, H + 160], fill=0)
+    nero = Image.new("RGBA", (W, H), (0, 0, 40, 0)); nero.putalpha(vig.filter(ImageFilter.GaussianBlur(90)))
+    img.alpha_composite(nero)
+    return img
+
+
+def testo3d(img, cx, y, parti, size, font_path, larg_max):
+    """Una riga di testo 'gonfio': estrusione scura, contorno spesso, riempimento sfumato.
+    parti = [(parola, (colore_alto, colore_basso)), ...]. Si restringe da sola se non sta."""
+    while True:
+        f = fnt(font_path, size)
+        spazio = f.getlength(" ")
+        larg = sum(f.getlength(p) for p, _ in parti) + spazio * (len(parti) - 1)
+        if larg <= larg_max or size < 40: break
+        size -= 4
+    bordo, prof = max(6, size // 13), max(6, size // 11)
+    asc, desc = f.getmetrics(); alt = asc + desc
+    lay = Image.new("RGBA", (int(larg) + bordo * 4 + prof, alt + bordo * 4 + prof), (0, 0, 0, 0))
+    ox, oy = bordo * 2, bordo * 2
+    d = ImageDraw.Draw(lay)
+    x = ox
+    for p, _ in parti:                                   # estrusione 3D
+        for k in range(prof, 0, -1):
+            d.text((x + k * 0.6, oy + k), p, font=f, fill=NAVY, stroke_width=bordo, stroke_fill=NAVY)
+        x += f.getlength(p) + spazio
+    x = ox
+    for p, (c1, c2) in parti:
+        d.text((x, oy), p, font=f, fill=NAVY, stroke_width=bordo, stroke_fill=NAVY)
+        m = Image.new("L", lay.size, 0)
+        ImageDraw.Draw(m).text((x, oy), p, font=f, fill=255)
+        gr = Image.new("RGBA", lay.size)
+        gd = ImageDraw.Draw(gr)
+        for yy in range(lay.height):
+            t = min(1, max(0, (yy - oy - alt * 0.15) / (alt * 0.75)))
+            gd.line([(0, yy), (lay.width, yy)], fill=tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(3)) + (255,))
+        lay.paste(gr, (0, 0), m)
+        hl = Image.new("L", lay.size, 0)                 # riflesso lucido in alto
+        ImageDraw.Draw(hl).text((x, oy), p, font=f, fill=70)
+        hl = Image.composite(hl, Image.new("L", lay.size, 0),
+                             Image.linear_gradient("L").resize(lay.size).point(lambda v: 255 if v < 95 else 0))
+        bianco = Image.new("RGBA", lay.size, (255, 255, 255, 0)); bianco.putalpha(hl)
+        lay.alpha_composite(bianco)
+        x += f.getlength(p) + spazio
+    lay = con_ombra(lay, raggio=12, spost=8, opacita=120)
+    img.alpha_composite(lay, (int(cx - lay.width / 2), int(y)))
+    return size
+
+
+def colora(riga, base):
+    """Le parole con numeri in rosso: e' li' che cade l'occhio."""
+    return [(p, ROSSO if re.search(r"\d", p) else base) for p in riga.split()]
+
+
+def bandiera(img, x, y, w=190, angolo=-12):
+    h = int(w * 0.62)
+    fl = Image.new("RGBA", (w + 16, h + 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(fl)
+    d.rounded_rectangle([0, 0, w + 15, h + 15], 10, fill=(255, 255, 255, 255))
+    for i, col in enumerate([(0, 146, 70), (255, 255, 255), (206, 43, 55)]):
+        d.rectangle([8 + i * w // 3, 8, 8 + (i + 1) * w // 3, h + 8], fill=col + (255,))
+    fl = con_ombra(fl.rotate(angolo, expand=True, resample=Image.BICUBIC), 8, 6, 110)
+    img.alpha_composite(fl, (x, y))
+
+
+def bollino(img, cx, cy, d, numero, sotto, angolo=12):
+    b = Image.new("RGBA", (d + 20, d + 20), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(b)
+    dr.ellipse([0, 0, d + 19, d + 19], fill=(255, 255, 255, 255))
+    dr.ellipse([8, 8, d + 11, d + 11], fill=(220, 30, 30, 255))
+    luce = Image.new("RGBA", b.size, (0, 0, 0, 0))     # riflesso su livello separato
+    ImageDraw.Draw(luce).ellipse([24, 16, d - 4, d * 0.48], fill=(255, 255, 255, 50))
+    b.alpha_composite(luce)
+    f1 = grafica.adatta(dr, numero, "assets/fonts/Anton-Regular.ttf", int(d * 0.48), d * 0.75)
+    dr.text(((d + 20) / 2, (d + 20) * 0.43), numero, font=f1, fill="white", anchor="mm",
+            stroke_width=4, stroke_fill=(120, 0, 0))
+    f2 = grafica.adatta(dr, sotto, "assets/fonts/BebasNeue-Regular.ttf", int(d * 0.2), d * 0.72)
+    dr.text(((d + 20) / 2, (d + 20) * 0.74), sotto, font=f2, fill="white", anchor="mm")
+    b = con_ombra(b.rotate(-angolo, expand=True, resample=Image.BICUBIC), 8, 6, 130)
+    img.alpha_composite(b, (int(cx - b.width / 2), int(cy - b.height / 2)))
+
+
+def pillola_emoji(img, cx, cy, codici, size=78):
+    pad = 18
+    w = len(codici) * size + (len(codici) - 1) * 14 + pad * 2
+    p = Image.new("RGBA", (w, size + pad * 2), (0, 0, 0, 0))
+    ImageDraw.Draw(p).rounded_rectangle([0, 0, w - 1, size + pad * 2 - 1], (size + pad * 2) // 2,
+                                        fill=(255, 255, 255, 255), outline=NAVY, width=5)
+    for i, c in enumerate(codici):
+        p.alpha_composite(emoji(c, size), (pad + i * (size + 14), pad))
+    p = con_ombra(p, 10, 7, 120)
+    img.alpha_composite(p, (int(cx - p.width / 2), int(cy - p.height / 2)))
+
+
+def mascotte(img, x, y, h):
+    m = Image.open(os.path.join(ROOT, "assets", "brand", "mascotte.png")).convert("RGBA")
+    m = m.resize((int(m.width * h / m.height), h), Image.LANCZOS)
+    img.alpha_composite(con_ombra(m, 10, 8, 120), (x, y))
+
+
+# ---------- modello A: SFIDA ----------
+def modello_sfida(q, out):
+    m = q.get("youtube", {}).get("miniatura", {})
+    r1, r2 = m.get("riga1", q["titolo"]), m.get("riga2", "")
+    n = re.search(r"\d+", m.get("badge", "")) or re.search(r"\d+", q.get("sottotitolo", ""))
+    img = raggiera((24, 120, 230), (46, 160, 255), (640, 300))
+    bandiera(img, 18, 14)
+    usato = testo3d(img, 640, 52, colora(r1, BIANCO), 160, "assets/fonts/Anton-Regular.ttf", 820)
+    if r2:
+        testo3d(img, 640, 52 + int(usato * 1.18), colora(r2, GIALLO), usato,
+                "assets/fonts/Anton-Regular.ttf", 840)
+    mascotte(img, -12, 455, 265)
+    faccia = con_ombra(emoji("1f631", 285), 12, 9, 130)
+    img.alpha_composite(faccia, (W - faccia.width + 4, H - faccia.height + 12))
+    pillola_emoji(img, 640, 640, ["1f9e0", "1f914", "1f3c6", "1f525"], size=72)
+    if n: bollino(img, W - 115, 112, 170, n.group(), "DOMANDE")
+    img.convert("RGB").save(out, quality=92)
+    return out
+
+
+# ---------- modello B: ANTEPRIMA ----------
+def modello_anteprima(q, out):
+    m = q.get("youtube", {}).get("miniatura", {})
+    frase = m.get("sfida_b", "NESSUNO RIESCE A SUPERARE QUESTO TEST!")
+    dom = q["domande"]
+    if "domanda" in m: d = dom[m["domanda"]]
+    else:   # una domanda del livello difficile, corta e con opzioni corte: si legge da lontano
+        cand = dom[len(dom) * 2 // 3:] or dom
+        d = min(cand, key=lambda x: len(x["q"]) + 2 * max(len(o) for o in x["opzioni"]))
+    b = json.load(open(os.path.join(ROOT, "brand.json"), encoding="utf-8"))
+    img = raggiera((24, 120, 230), (46, 160, 255), (640, 360))
+    # fascia scura con la frase-sfida
+    fascia = Image.new("RGBA", (1180, 150), (0, 0, 0, 0))
+    ImageDraw.Draw(fascia).rounded_rectangle([0, 0, 1179, 149], 36, fill=(11, 20, 55, 240),
+                                             outline=(255, 255, 255, 255), width=6)
+    img.alpha_composite(con_ombra(fascia, 10, 7, 120), (50, 22))
+    parti = [(p, GIALLO if i % 2 else BIANCO) for i, p in enumerate(frase.split())]
+    testo3d(img, 640, 34, parti, 92, "assets/fonts/Anton-Regular.ttf", 1080)
+    # riquadro giallo con la domanda vera
+    box = Image.new("RGBA", (1180, 480), (0, 0, 0, 0))
+    ImageDraw.Draw(box).rounded_rectangle([0, 0, 1179, 479], 40, fill=(255, 210, 60, 255),
+                                          outline=NAVY, width=8)
+    img.alpha_composite(con_ombra(box, 12, 8, 120), (50, 205))
+    dr = ImageDraw.Draw(img)
+    fq = grafica.adatta(dr, d["q"], "assets/fonts/Anton-Regular.ttf", 74, 1080)
+    dr.text((640, 290), d["q"], font=fq, fill=NAVY, anchor="mm")
+    cw, ch = 520, 118
+    for i, o in enumerate(d["opzioni"]):
+        r, c = divmod(i, 2)
+        p = os.path.join(ROOT, ".tmp_card.png")
+        _, pad = grafica.card(cw, ch, "ABCD"[i], o, "neutra", b["colori"], b["font"], p)
+        img.alpha_composite(Image.open(p).convert("RGBA"), (95 + c * (cw + 50) - pad, 370 + r * (ch + 30) - pad))
+        os.remove(p)
+    faccia = con_ombra(emoji("1f914", 210), 10, 8, 130)
+    img.alpha_composite(faccia, (W - faccia.width + 10, H - faccia.height + 20))
+    img.convert("RGB").save(out, quality=92)
+    return out
+
+
+def main(quiz_path, out=None, modello="tutti"):
+    q = json.load(open(quiz_path, encoding="utf-8"))
+    base = os.path.join(ROOT, "out", os.path.splitext(os.path.basename(quiz_path))[0])
+    os.makedirs(os.path.join(ROOT, "out"), exist_ok=True)
+    fatti = []
+    if modello in ("sfida", "tutti"):
+        fatti.append(modello_sfida(q, out or base + "-miniatura.jpg"))
+    if modello in ("anteprima", "tutti"):
+        fatti.append(modello_anteprima(q, base + "-miniatura-b.jpg"))
+    for f in fatti: print(f"Miniatura: {f}")
+    return fatti[0]
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2: sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("quiz"); ap.add_argument("out", nargs="?")
+    ap.add_argument("--modello", choices=["sfida", "anteprima", "tutti"], default="tutti")
+    a = ap.parse_args()
+    main(a.quiz, a.out, a.modello)

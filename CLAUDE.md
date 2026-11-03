@@ -36,6 +36,12 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
 - Ritmo: niente pause vuote. Lettura 3,5 s (o la durata della voce) + barra 5 s,
   risposta 3 s.
 - Tutto si produce qui, nel motore: niente Canva né programmi esterni.
+- **Copertine** (`miniatura.py`, analisi in `ANALISI-COPERTINE.md`): sempre due modelli.
+  A "Sfida": raggiera blu, testo enorme in 3D (bianco + giallo, numeri in rosso),
+  tricolore, mascotte QDI a sinistra, faccina 3D stupita a destra, bollino rosso
+  "N DOMANDE", pillola di emoji. B "Anteprima": frase-sfida in alto + una domanda vera
+  con le card A/B/C/D. Mai solo testo su fondo piatto; mai foto di persone reali o
+  personaggi protetti da copyright.
 - Font solo statici: Anton (titoli/domande), Bebas Neue (opzioni/CTA).
 - Il formato reel (9:16) usa barra, logo, mascotte, sfondi ed effetti QDI; le clip
   intro/CTA/outro sono 16:9 e restano solo nel formato YouTube.
