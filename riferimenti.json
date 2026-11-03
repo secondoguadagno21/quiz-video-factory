@@ -66,5 +66,16 @@
       "url": "https://www.youtube.com/watch?v=PJhfK13OiCI",
       "note": ""
     }
+  ],
+  "canali_da_seguire": [
+    {
+      "handle": "@GKSmartPoint-m7p",
+      "id": "UCQiuMQ-ZpJYmDFH_luaefOw",
+      "nome": "GK Smart Point",
+      "url": "https://www.youtube.com/@GKSmartPoint-m7p",
+      "perche": "Copertine e titoli che funzionano (video semplici e bruttarelli: da NON copiare il montaggio)",
+      "analisi": "ANALISI-COPERTINE.md",
+      "dati": "riferimenti/gk-smart-point.json"
+    }
   ]
 }
