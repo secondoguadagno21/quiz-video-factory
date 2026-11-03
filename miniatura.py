@@ -319,15 +319,14 @@ def modello_ritratto(out, righe, ritratto, scuro=True):
     img.alpha_composite(cornice, (W - cornice.width + 10, (H - cornice.height) // 2 + 6))
     # testo a sinistra, ogni riga il suo colore; le parole con numeri in rosso
     larg = W - cornice.width - 30
-    n = len(righe); size = min(145, int((H - 130) / n / 1.02))
-    y = 95 + (H - 115 - n * size * 1.02) / 2 - size * 0.12      # sotto la bandierina
+    n = len(righe); size = min(150, int((H - 70) / n / 1.02))
+    y = (H - n * size * 1.02) / 2 - size * 0.12
     for i, riga in enumerate(righe):
         col = COLORI_RIGHE[i % len(COLORI_RIGHE)]
         parti = [(p, ROSSO if re.search(r"\d", p) else (col, tuple(max(0, c - 40) for c in col))) for p in riga.split()]
         lay_x = 30 + larg / 2
         testo3d(img, lay_x, y, parti, size, "assets/fonts/Anton-Regular.ttf", larg)
         y += size * 1.02
-    bandiera(img, 14, 10, w=120)
     img.convert("RGB").save(out, quality=93)
     return out
 
