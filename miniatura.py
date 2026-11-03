@@ -215,6 +215,49 @@ def modello_anteprima(q, out):
     return out
 
 
+# ---------- modello C: PERSONAGGIO (fasce colorate, stile GK Smart Point) ----------
+FASCE = [((230, 40, 40), "white"), ((255, 214, 0), (11, 20, 55)), ((40, 175, 70), "white"),
+         ((140, 60, 220), (255, 230, 60)), ((255, 120, 0), "white")]
+
+def personaggio(cartella, chiave):
+    """Un personaggio inventato da assets/personaggi (PNG con trasparenza), a rotazione."""
+    if not os.path.isdir(cartella): return None
+    tutti = sorted(x for x in os.listdir(cartella) if x.lower().endswith(".png"))
+    if not tutti: return None
+    return os.path.join(cartella, tutti[sum(map(ord, chiave)) % len(tutti)])
+
+def modello_personaggio(q, out, chiave="quiz"):
+    m = q.get("youtube", {}).get("miniatura", {})
+    righe = m.get("righe_c") or [m.get("riga1", q["titolo"]), m.get("riga2", "")]
+    img = raggiera((20, 110, 225), (40, 150, 250), (330, 380))
+    # a sinistra il personaggio (o, finche' non c'e', la faccina 3D pensierosa)
+    p = personaggio(os.path.join(ROOT, "assets", "personaggi"), chiave)
+    if p:
+        pers = Image.open(p).convert("RGBA")
+        pers = pers.resize((int(pers.width * 700 / pers.height), 700), Image.LANCZOS)
+        img.alpha_composite(con_ombra(pers, 14, 10, 120), (-30, H - 700))
+    else:
+        f = con_ombra(emoji("1f914", 470), 14, 10, 130)
+        img.alpha_composite(f, (-10, H - f.height + 20))
+    # a destra le fasce colorate, una per riga
+    x0, w, y = 500, 750, 40
+    hb = min(150, (H - 80) // max(len(righe), 1) - 16)
+    for i, r in enumerate(r for r in righe if r):
+        col, tcol = FASCE[i % len(FASCE)]
+        fascia = Image.new("RGBA", (w, hb), (0, 0, 0, 0))
+        dr = ImageDraw.Draw(fascia)
+        dr.rounded_rectangle([0, 0, w - 1, hb - 1], hb // 4, fill=col + (255,), outline=NAVY, width=6)
+        f = grafica.adatta(dr, r, "assets/fonts/Anton-Regular.ttf", int(hb * 0.78), w - 50)
+        dr.text((w / 2, hb / 2), r, font=f, fill=tcol, anchor="mm",
+                stroke_width=4 if tcol == "white" else 0, stroke_fill=NAVY)
+        fascia = con_ombra(fascia.rotate(-1.5 if i % 2 else 1.5, expand=True, resample=Image.BICUBIC), 8, 6, 120)
+        img.alpha_composite(fascia, (x0, y)); y += hb + 16
+    img.alpha_composite(con_ombra(emoji("1f9e0", 130), 8, 6, 120), (W - 150, H - 150))
+    bandiera(img, 18, 14, w=150)
+    img.convert("RGB").save(out, quality=92)
+    return out
+
+
 def main(quiz_path, out=None, modello="tutti"):
     q = json.load(open(quiz_path, encoding="utf-8"))
     base = os.path.join(ROOT, "out", os.path.splitext(os.path.basename(quiz_path))[0])
@@ -224,6 +267,8 @@ def main(quiz_path, out=None, modello="tutti"):
         fatti.append(modello_sfida(q, out or base + "-miniatura.jpg"))
     if modello in ("anteprima", "tutti"):
         fatti.append(modello_anteprima(q, base + "-miniatura-b.jpg"))
+    if modello in ("personaggio", "tutti"):
+        fatti.append(modello_personaggio(q, base + "-miniatura-c.jpg", os.path.basename(base)))
     for f in fatti: print(f"Miniatura: {f}")
     return fatti[0]
 
@@ -231,6 +276,6 @@ def main(quiz_path, out=None, modello="tutti"):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("quiz"); ap.add_argument("out", nargs="?")
-    ap.add_argument("--modello", choices=["sfida", "anteprima", "tutti"], default="tutti")
+    ap.add_argument("--modello", choices=["sfida", "anteprima", "personaggio", "tutti"], default="tutti")
     a = ap.parse_args()
     main(a.quiz, a.out, a.modello)

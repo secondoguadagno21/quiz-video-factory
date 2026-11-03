@@ -40,8 +40,10 @@ Valgono per OGNI video e OGNI sessione. Non si derogano senza un ordine esplicit
   A "Sfida": raggiera blu, testo enorme in 3D (bianco + giallo, numeri in rosso),
   tricolore, mascotte QDI a sinistra, faccina 3D stupita a destra, bollino rosso
   "N DOMANDE", pillola di emoji. B "Anteprima": frase-sfida in alto + una domanda vera
-  con le card A/B/C/D. Mai solo testo su fondo piatto; mai foto di persone reali o
-  personaggi protetti da copyright.
+  con le card A/B/C/D. C "Personaggio": personaggio inventato a sinistra (generato da
+  `personaggi.py`, in `assets/personaggi`) + fasce colorate con scritte grandi a destra.
+  Mai solo testo su fondo piatto; mai foto di persone reali o personaggi protetti da
+  copyright.
 - Font solo statici: Anton (titoli/domande), Bebas Neue (opzioni/CTA).
 - Il formato reel (9:16) usa barra, logo, mascotte, sfondi ed effetti QDI; le clip
   intro/CTA/outro sono 16:9 e restano solo nel formato YouTube.

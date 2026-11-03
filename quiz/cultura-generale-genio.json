@@ -34,7 +34,12 @@
   "miniatura": {
    "riga1": "SE NE FAI 30",
    "riga2": "SEI UN GENIO!",
-   "badge": "51 DOMANDE"
+   "badge": "51 DOMANDE",
+   "righe_c": [
+    "SEI UN GENIO",
+    "SE RIESCI A FARE",
+    "30 SU 51!"
+   ]
   }
  },
  "domande": [
